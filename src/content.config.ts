@@ -1,20 +1,62 @@
-import { defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
-import { z } from 'astro/zod';
+import { glob, file } from 'astro/loaders';
+import { defineCollection } from 'astro/content/config';
+import { z } from 'astro/zod'
 
-const blog = defineCollection({
-	// Load Markdown and MDX files in the `src/content/blog/` directory.
-	loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
-	// Type-check frontmatter using a schema
-	schema: ({ image }) =>
-		z.object({
-			title: z.string(),
-			description: z.string(),
-			// Transform string to Date object
-			pubDate: z.coerce.date(),
-			updatedDate: z.coerce.date().optional(),
-			heroImage: z.optional(image()),
-		}),
+const projects = defineCollection({
+    loader: glob({pattern: "src/content/projects/**/*.md"}),
+    schema: z.object({
+        id: z.number(),
+        title: z.string().max(50),
+        tools: z.preprocess(
+            (val) => (Array.isArray(val) ? val : [val]),
+            z.array(z.enum(["TypeScript", "LIVE", "HTML", "JavaScript", "React Native", "Backend API", "Node.js", "Docker", "Tailwind"]))), // change categories here
+        year: z.string().max(4),
+        liveSite: z.url().optional(),
+        github: z.url().optional(),
+        description: z.string().max(350),
+        isFeatured: z.boolean(),
+        isDraft: z.boolean()
+    })
 });
 
-export const collections = { blog };
+const blog = defineCollection({
+    loader: glob({pattern: "src/content/blog/**/*.md"}),
+    schema: z.object({
+        id: z.number(),
+        slug: z.string().max(50),
+        title: z.string().max(50),
+        publishedDate: z.date(),
+        category: z.enum(["systems", "ai", "productivity"]), // change and add blog categories here
+        readingTime: z.number().optional(),
+        isDraft: z.boolean()
+    })
+})
+
+const experience = defineCollection({
+    loader: file("src/content/resume/experience.yaml"),
+    schema: z.object({
+        title: z.string().max(70),
+        timeline: z.string().max(15),
+        description: z.string().max(500)
+    })
+})
+
+const education = defineCollection({
+    loader: file("src/content/resume/education.yaml"),
+    schema: z.object({
+        title: z.string().max(70),
+        timeline: z.string().max(15),
+        school: z.string().max(70)
+    })
+})
+
+const skillsAndTools = defineCollection({
+    loader: file("src/content/skills-and-tools/skillsAndTools.yaml"),
+    schema: z.object({
+        title: z.string().max(70),
+        items: z.array(z.string())
+    })
+})
+
+
+export const collections = { projects, blog, experience, education, skillsAndTools };

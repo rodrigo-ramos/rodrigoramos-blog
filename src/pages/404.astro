@@ -1,0 +1,25 @@
+---
+// layout
+import Layout from "../layout/Layout.astro"
+
+// components
+import Section from "../components/elements/Section.astro";
+import Text from "../components/elements/Text.astro";
+import Link from "../components/elements/Link.astro";
+---
+
+<Layout
+    title="Page Not Found"
+    description="404"
+    nofollow
+    noindex
+>
+    <Section
+        aria-label="Page Not Found"
+        title="Page Not Found"
+        titleHeading="404.exe"
+    >
+        <Text variant={'normal'} class="text-base-400">The page you are trying to access seems to be broken or doesn't exist! :(</Text>
+        <Link variant={'inline'} href="/" text="Go back to the homepage" />
+    </Section>
+</Layout>

@@ -1,0 +1,19 @@
+- id: 1
+  title: Tools
+  items:
+    - Go
+    - Python
+    - TypeScript
+    - SQL
+    - AWS
+    - Docker
+    - PostgreSQL
+- id: 2
+  title: Skills
+  items:
+    - Distributed Systems
+    - REST/gRPC APIs
+    - Scalability
+    - Unit/integration/E2E testing
+    - Ethereum, EVM, smart contracts
+    - Code reviews, documentation

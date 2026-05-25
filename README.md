@@ -1,47 +1,37 @@
-# Astro Starter Kit: Blog
+# Decker - Astro & Tailwind Portfolio Template
 
-```sh
-npm create astro@latest -- --template blog
-```
+A portfolio Astro & Tailwind theme built for developers and engineers. Decker was built with a retro tech design that combines the performance of Astro with the flexibility of Tailwind CSS to deliver a strong online presence.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- [**Live Demo**](https://decker-gmc.pages.dev) 
+- [**Documentation**](https://jessgaspar.dev/docs/getting-started) 
+- [**Changelog**](https://jessgaspar.dev/changelog/decker) 
+- [**Support**](https://jessgaspar.dev/legal/support) 
 
-Features:
+## Pages Included
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and Open Graph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
+- Home
+- Projects
+- About
+- Blog
+- Blog post
+- Contact
+- 404
 
-## 🚀 Project Structure
+## Features
 
-Inside of your Astro project, you'll see the following folders and files:
+Built with both developers and content editors in mind, Decker ships with a comprehensive set of features:
 
-```text
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   ├── content/
-│   ├── layouts/
-│   └── pages/
-├── astro.config.mjs
-├── README.md
-├── package.json
-└── tsconfig.json
-```
+- **Content Collections:** Structured data management for projects, blog posts, experience, education and skills — making updates quick, painless, and consistent across your entire site
+- **Reusable Components:** A library of modular components that keep your codebase clean, readable, and straightforward to customize for your portfolio
+- **Custom Tailwind Theme:** A bespoke design system built on Tailwind CSS with a clean, professional aesthetic that is easy to adapt to your portfolio's identity
+- **Pagination:** Keeps your projects and blog scalable and navigable as your portfolio grows over time
+- **Sitemap:** Auto-generated and search-engine ready, ensuring all your pages are indexed from day one without any manual configuration
+- **Optimized for SEO:** Built-in best practices including semantic markup, meta tags, and structured data to help your portfolio rank higher and reach more people
+- **Optimized for Accessibility:** Designed to be usable by everyone, with accessible patterns, and semantic HTML throughout
+- **Ongoing Updates:** Regular improvements and continued compatibility with the latest Astro releases so your theme stays modern and well-maintained
+- **Optional CMS with PagesCMS:** Manage your projects, blog posts, resume, and more site content through an intuitive visual interface — no code required
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
+## 🧞 Astro Commands
 
 All commands are run from the root of the project, from a terminal:
 
@@ -54,10 +44,4 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-## 👀 Want to learn more?
 
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).

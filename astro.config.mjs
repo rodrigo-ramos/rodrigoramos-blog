@@ -1,35 +1,31 @@
 // @ts-check
-
-import mdx from '@astrojs/mdx';
-import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
+import tailwindcss from '@tailwindcss/vite';
+import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://example.com',
-	integrations: [mdx(), sitemap()],
-	fonts: [
-		{
-			provider: fontProviders.local(),
-			name: 'Atkinson',
-			cssVariable: '--font-atkinson',
-			fallbacks: ['sans-serif'],
-			options: {
-				variants: [
-					{
-						src: ['./src/assets/fonts/atkinson-regular.woff'],
-						weight: 400,
-						style: 'normal',
-						display: 'swap',
-					},
-					{
-						src: ['./src/assets/fonts/atkinson-bold.woff'],
-						weight: 700,
-						style: 'normal',
-						display: 'swap',
-					},
-				],
-			},
-		},
-	],
+  fonts: [
+    { 
+      provider: fontProviders.fontsource(),
+      name: "VT323",
+      cssVariable: "--font-pixels",
+      fallbacks: ["monospace"],
+      styles: ["normal", "italic"],
+    },
+    { 
+      provider: fontProviders.fontsource(),
+      name: "JetBrains Mono",
+      cssVariable: "--font-mono",
+      fallbacks: ["monospace"],
+      weights: [400, 500, 600, 700, 800],
+      styles: ["normal", "italic"],
+    }
+  ],
+
+  vite: {
+    plugins: [tailwindcss()]
+  },
+  site: "https://decker-theme.pages.dev", // change to your domain
+  integrations: [sitemap()]
 });

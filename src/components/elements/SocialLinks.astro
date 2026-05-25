@@ -1,0 +1,31 @@
+---
+// assets
+import Github from "../../assets/icons/Github.astro";
+import Linkedin from "../../assets/icons/Linkedin.astro";
+import Twitter from "../../assets/icons/Twitter.astro";
+
+const socials = [
+  { link: "https://github.com", icon: Github, label: "GitHub" },
+  { link: "https://linkedin.com", icon: Linkedin, label: "LinkedIn" },
+  { link: "https://x.com", icon: Twitter, label: "Twitter/X" },
+];
+---
+
+<div class="flex flex-row gap-24">
+  {
+    socials.map((social) => {
+      const Icon = social.icon;
+      return (
+        <a
+          href={social.link}
+          class="text-base-100 hover:text-base-300"
+          aria-label={social.label}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Icon width={20} height={20} fill="currentColor" />
+        </a>
+      );
+    })
+  }
+</div>

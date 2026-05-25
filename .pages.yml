@@ -1,0 +1,78 @@
+media:
+  - name: assets
+    label: Assets
+    input: src/assets
+    output: ../../assets
+content:
+  - name: projects
+    label: Projects
+    type: collection
+    path: src/content/projects
+    fields:
+      - { name: id, label: ID, type: number }
+      - { name: title, label: Title, type: string }
+      - name: tools
+        label: Tools
+        type: select
+        options:
+          multiple: true
+          values:
+            - HTML
+            - JavaScript
+            - TypeScript
+            - LIVE
+            - Docker
+            - React Native
+            - Backend API
+            - Node.js
+            - Tailwind
+      - { name: year, label: Year, type: string}
+      - { name: github, label: GitHub URL, type: string }
+      - { name: liveSite, label: Live Site URL, type: string }
+      - name: description
+        label: Description
+        type: text
+        options:
+          maxlength: 350
+      - { name: isFeatured, label: Featured, type: boolean, default: false }
+      - { name: isDraft, label: Draft, type: boolean, default: true }
+  - name: education
+    label: Education
+    type: file
+    path: src/content/resume/education.yaml
+    format: yaml
+    list: true
+    fields:
+      - { name: title, label: Title, type: string }
+      - { name: timeline, label: Timeline, type: string }
+      - { name: school, label: School, type: string }
+  - name: experience
+    label: Experience
+    type: file
+    path: src/content/resume/experience.yaml
+    format: yaml
+    list: true
+    fields:
+      - { name: title, label: Title, type: string }
+      - { name: timeline, label: Timeline, type: string }
+      - name: description
+        label: Description
+        type: text
+  - name: blog
+    label: Blog
+    type: collection
+    path: src/content/blog
+    fields:
+      - { name: id, label: ID, type: number }
+      - { name: title, label: Title, type: string }
+      - { name: slug, label: Slug, type: string } 
+      - { name: publishedDate, label: Published Date, type: date }
+      - name: category
+        label: Category
+        type: select
+        options:
+          values:
+            - Placeholder 1
+            - Placeholder 2
+      - { name: isDraft, label: Draft, type: boolean, default: true }
+      - { name: body, label: Content, type: rich-text }
