@@ -9,7 +9,12 @@ const projects = defineCollection({
         title: z.string().max(50),
         tools: z.preprocess(
             (val) => (Array.isArray(val) ? val : [val]),
-            z.array(z.enum(["TypeScript", "LIVE", "HTML", "JavaScript", "React Native", "Backend API", "Node.js", "Docker", "Tailwind"]))), // change categories here
+            z.array(z.enum([
+                "TypeScript", "LIVE", "HTML", "JavaScript", "React Native", "Backend API", "Node.js", "Docker", "Tailwind",
+                "Python", "asyncio", "Telethon", "SQLite", "mpv", "Bash", "CLI",
+                "OpenTofu", "Ansible", "AWS", "GCP", "Azure", "Kubernetes",
+                "GitHub Actions", "GitLab CI", "PostgreSQL"
+            ]))),
         year: z.string().max(4),
         liveSite: z.url().optional(),
         github: z.url().optional(),
@@ -26,7 +31,7 @@ const blog = defineCollection({
         slug: z.string().max(50),
         title: z.string().max(50),
         publishedDate: z.date(),
-        category: z.enum(["systems", "ai", "productivity"]), // change and add blog categories here
+        category: z.enum(["systems", "ai", "productivity", "security", "cloud", "ideas", "reading", "philosophy"]),
         readingTime: z.number().optional(),
         isDraft: z.boolean()
     })

@@ -26,6 +26,6 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()]
   },
-  site: "https://decker-theme.pages.dev", // change to your domain
+  site: "https://renacentista.dev",
   integrations: [sitemap()]
 });

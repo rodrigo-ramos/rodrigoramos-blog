@@ -1,3 +1,8 @@
+# DISABLED — example content, not rendered.
+# The Experience section is currently disabled in src/pages/about.astro.
+# To re-enable: replace these placeholder entries with real data and re-import
+# the <Experience /> component in about.astro.
+
 - id: 1
   title: Software Engineer — Polygon Labs
   timeline: 2023 — Present

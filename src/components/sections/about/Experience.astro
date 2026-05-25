@@ -1,4 +1,7 @@
 ---
+// DISABLED — example section, not imported in /about.
+// Kept as a reference template. Re-import in src/pages/about.astro to re-enable.
+
 // components
 import Section from "../../elements/Section.astro";
 import ExperienceCard from "../../elements/ExperienceCard.astro";
@@ -12,7 +15,7 @@ const experience = await getCollection("experience");
 <Section 
     aria-label="Experience"
     title="Experience"
-    titleHeading="Where I've worked"
+    titleHeading="Dónde he trabajado"
 >
     {
             experience.map((entry) => (
