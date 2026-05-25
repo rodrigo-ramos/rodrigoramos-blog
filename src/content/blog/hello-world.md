@@ -3,7 +3,7 @@ id: 4
 slug: "hello-world"
 title: "Hello World"
 publishedDate: 2026-05-25
-category: "engineering"
+category: "systems"
 isDraft: false
 ---
 # Hello World!
