@@ -2,7 +2,7 @@
 id: 5
 slug: "organic-prog"
 title: "Programación Orgánica"
-publishedDate: 2026-06-1
+publishedDate: 2026-06-01
 category: "systems"
 isDraft: false
 ---
