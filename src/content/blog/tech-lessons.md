@@ -2,7 +2,7 @@
 id: 6
 slug: "tech-lessons"
 title: "Lecciones de vida tecnólogo"
-publishedDate: 2026-06-01
+publishedDate: 2026-06-02
 category: "systems"
 isDraft: false
 ---
