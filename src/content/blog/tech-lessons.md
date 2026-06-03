@@ -23,3 +23,7 @@ isDraft: false
 7.- Gasta dinero en parecer un pro, para después ser un pro. No le llames gastar, llámale *invertir*. 
 
 8.- Desde los primeros días abre tu sitio, blog o lo que sea. Ahí vierte tus pensamientos más alocados; no tienes un compromiso con nadie de todo lo que ahí suceda. Usa pseudónimo. Piensa nuevamente. Desarrolla la escritura. Solo un mono no organiza lo que su boca enunciará. 
+
+---
+
+Este escrito fue logrado 100% a mano. No se empleó ningún agente de IA para editar o rellenar con basura. 
