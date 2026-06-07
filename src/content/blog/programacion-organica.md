@@ -1,9 +1,10 @@
 ---
 id: 5
-slug: "organic-prog"
+slug: "programacion-organica"
 title: "Programación Orgánica"
 publishedDate: 2026-06-01
 category: "systems"
+readingTime: 2
 isDraft: false
 ---
 # Programadores, hiperindustrialización y otros cuentos para antes de dormir.

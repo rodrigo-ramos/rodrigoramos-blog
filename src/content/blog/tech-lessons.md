@@ -4,6 +4,7 @@ slug: "tech-lessons"
 title: "Lecciones de vida tecnólogo"
 publishedDate: 2026-06-02
 category: "systems"
+readingTime: 2
 isDraft: false
 ---
 # Lecciones aprendidas en 15 años de tecnólogo
@@ -16,7 +17,7 @@ isDraft: false
 
 4.- Sigue leyendo. Sigue imaginando. No te enfrasques en un solo asunto, salta cual chapulín por todos los temas que te interesen y manosea los que no; no pares, porque te desconectarás de lo que tu cerebro está tratando de lograr. 
 
-5.- Elige prontamente tu enfoque: especialista vs generalista. También recuerda que nada es para siempre. Cuando quiras, puedes caminar en otrea dirección.
+5.- Elige prontamente tu enfoque: especialista vs generalista. También recuerda que nada es para siempre. Cuando quieras, puedes caminar en otra dirección.
 
 6.- Algunas veces tienes que soportar tu punto de vista aunque no sea el más popular o que todo el mundo quiera oír; la función de ser pesimista es que balancea a los optimistas en sus deseos más insulsos. El punto medio es que racionalmente ofendas al que no piense como tú.
 

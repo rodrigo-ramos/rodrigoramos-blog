@@ -31,7 +31,7 @@ const blog = defineCollection({
         slug: z.string().max(50),
         title: z.string().max(50),
         publishedDate: z.date(),
-        category: z.enum(["systems", "ai", "productivity", "security", "cloud", "ideas", "reading", "philosophy"]),
+        category: z.enum(["systems", "ai", "productivity", "security", "cloud", "ideas", "reading", "philosophy", "me"]),
         readingTime: z.number().optional(),
         isDraft: z.boolean()
     })

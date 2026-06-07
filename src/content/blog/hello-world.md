@@ -4,6 +4,7 @@ slug: "hello-world"
 title: "Hello World"
 publishedDate: 2026-05-25
 category: "systems"
+readingTime: 1
 isDraft: false
 ---
 # Hello World!

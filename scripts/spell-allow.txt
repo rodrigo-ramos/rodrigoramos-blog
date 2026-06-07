@@ -1,0 +1,16 @@
+# Words the spell checker must never flag (proper nouns, tech jargon, brands).
+# One word per line, lowercase. Lines starting with # are ignored.
+# Extend this list instead of editing the script.
+backend
+frontend
+docker
+devops
+saramago
+volpi
+bolaño
+borges
+cortázar
+sábato
+fuentes
+balderas
+gandhi
