@@ -1,0 +1,46 @@
+---
+// layout
+import Layout from "../../layout/Layout.astro";
+
+// components
+import Section from "../../components/elements/Section.astro";
+import MicrofictionCard from "../../components/elements/MicrofictionCard.astro";
+import Pagination from "../../components/elements/Pagination.astro";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+export const getStaticPaths = (async ({paginate}) => {
+    const microfiction = await getCollection("microfiction");
+    const sorted = microfiction.sort(
+        (a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime()
+    );
+    return paginate(sorted, {pageSize: 20})
+}) satisfies GetStaticPaths;
+
+// props
+const { page } = Astro.props;
+---
+
+<Layout
+    title="Microfiction"
+    description="Microrelatos: historias mínimas."
+    ogImage=""
+>
+    <Section
+        aria-label="Microfiction"
+        title="Microfiction"
+        titleHeading="Microrelatos"
+    >
+        {
+            page.data.map((story) => (
+                <MicrofictionCard
+                    title={story.data.title}
+                    publishedDate={story.data.publishedDate}
+                    slug={story.data.slug}
+                />
+            ))
+        }
+        <Pagination prev={page.url.prev} next={page.url.next} />
+    </Section>
+</Layout>

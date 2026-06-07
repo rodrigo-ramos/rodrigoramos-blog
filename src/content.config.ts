@@ -37,6 +37,16 @@ const blog = defineCollection({
     })
 })
 
+const microfiction = defineCollection({
+    loader: glob({pattern: "src/content/microfiction/**/*.md"}),
+    schema: z.object({
+        slug: z.string().max(50),
+        title: z.string().max(80),
+        publishedDate: z.date(),
+        isDraft: z.boolean()
+    })
+})
+
 const experience = defineCollection({
     loader: file("src/content/resume/experience.yaml"),
     schema: z.object({
@@ -64,4 +74,4 @@ const skillsAndTools = defineCollection({
 })
 
 
-export const collections = { projects, blog, experience, education, skillsAndTools };
+export const collections = { projects, blog, microfiction, experience, education, skillsAndTools };

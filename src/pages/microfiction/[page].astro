@@ -1,0 +1,46 @@
+---
+// layout
+import Layout from "../../layout/Layout.astro"
+
+// utils
+import { formatDate } from "../../utils/formatDate";
+
+// components
+import Section from "../../components/elements/Section.astro";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { render } from "astro:content";
+import { getCollection } from "astro:content";
+export const getStaticPaths = (async () => {
+    const microfiction = await getCollection("microfiction");
+    return microfiction.map((story) => ({
+        params: {
+            page: story.data.slug
+        },
+        props: {
+            story
+        }
+    }))
+}) satisfies GetStaticPaths;
+
+// props
+const { story } = Astro.props;
+const { Content } = await render(story);
+const { title, publishedDate } = story.data;
+---
+
+<Layout
+    title={title}
+    description=""
+    ogImage=""
+>
+    <Section
+        title=`Published On: ${formatDate(publishedDate)}`
+        titleHeading={title}
+    >
+    <div class="markdown-content flex flex-col gap-24">
+        <Content />
+    </div>
+    </Section>
+</Layout>
