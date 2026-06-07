@@ -15,10 +15,12 @@ import { type GetStaticPaths } from "astro";
 import { getCollection } from "astro:content";
 export const getStaticPaths = (async ({paginate}) => {
     const blog = await getCollection("blog");
-    const blogWithReadingTime = blog.map((article) => ({
-        ...article,
-        readingTime: getReadingTime(article.body ?? "")
-    }));
+    const blogWithReadingTime = blog
+        .map((article) => ({
+            ...article,
+            readingTime: getReadingTime(article.body ?? "")
+        }))
+        .sort((a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime());
     return paginate(blogWithReadingTime, {pageSize: 12})
 }) satisfies GetStaticPaths;
 
