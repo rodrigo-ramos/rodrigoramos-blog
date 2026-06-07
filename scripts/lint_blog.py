@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Linter for blog markdown frontmatter.
+"""Linter for content markdown frontmatter (blog + microfiction).
 
-Validates every src/content/blog/**/*.md against the schema defined in
-src/content.config.ts, auto-computes readingTime, cleans macOS ._* files,
-and spell-checks Spanish text via wordfreq (optional dependency, bundled dict).
+Validates each collection under src/content/ against the schemas defined in
+src/content.config.ts, auto-computes readingTime and autoincremental ids for
+the blog, cleans macOS ._* files, and spell-checks Spanish text via wordfreq
+(optional dependency, bundled dict).
 
 Setup (once):
-    python3 -m venv .venv && .venv/bin/pip install wordfreq
+    python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 Usage:
-    .venv/bin/python scripts/lint_blog.py   # full spell check
-    python3 scripts/lint_blog.py            # works too, but spell check is skipped
+    python3 scripts/lint_blog.py   # auto re-execs under .venv for the spell check
 Exit code 0 if no errors, 1 otherwise. Curate false positives in scripts/spell-allow.txt.
 """
 
@@ -17,13 +17,14 @@ from __future__ import annotations
 
 import difflib
 import math
+import os
 import re
 import sys
 from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-BLOG_DIR = ROOT / "src" / "content" / "blog"
+CONTENT = ROOT / "src" / "content"
 CONFIG = ROOT / "src" / "content.config.ts"
 ALLOW_FILE = Path(__file__).resolve().parent / "spell-allow.txt"
 
@@ -31,7 +32,25 @@ WPM = 200  # average Spanish prose reading speed (words per minute)
 MIN_WORD_LEN = 4  # ignore short tokens to cut spell-check noise
 CANDIDATE_POOL = 40000  # top-N Spanish words used as suggestion candidates
 
-REQUIRED_FIELDS = ("id", "slug", "title", "publishedDate", "category", "isDraft")
+# Per-collection rules, mirroring the Zod schemas in content.config.ts.
+COLLECTIONS = (
+    {
+        "name": "blog",
+        "dir": CONTENT / "blog",
+        "title_max": 50,
+        "has_id": True,
+        "has_category": True,
+        "has_reading_time": True,
+    },
+    {
+        "name": "microfiction",
+        "dir": CONTENT / "microfiction",
+        "title_max": 80,
+        "has_id": False,
+        "has_category": False,
+        "has_reading_time": False,
+    },
+)
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 GREEN = "\033[1;32m"
@@ -50,6 +69,24 @@ def load_allowlist() -> set[str]:
         return set()
     words = ALLOW_FILE.read_text(encoding="utf-8").splitlines()
     return {w.strip().lower() for w in words if w.strip() and not w.startswith("#")}
+
+
+def ensure_venv() -> None:
+    """If wordfreq isn't importable here but the project .venv has it, re-exec
+    under the venv interpreter so plain `python3 scripts/lint_blog.py` just works.
+
+    The venv's python is often a symlink to the system interpreter, so we guard
+    against re-exec loops with an env flag instead of comparing paths.
+    """
+    try:
+        import wordfreq  # noqa: F401
+        return
+    except ImportError:
+        pass
+    venv_py = ROOT / ".venv" / "bin" / "python"
+    if venv_py.exists() and not os.environ.get("LINT_REEXEC"):
+        os.environ["LINT_REEXEC"] = "1"
+        os.execv(str(venv_py), [str(venv_py), *sys.argv])
 
 
 def get_speller():
@@ -229,7 +266,17 @@ def assign_ids(files: list[Path]) -> list[tuple[Path, str, int]]:
     return changes
 
 
-def validate(path: Path, categories: list[str], allow: set[str]) -> tuple[list[str], list[str]]:
+def required_fields(spec: dict) -> list[str]:
+    """Build the required frontmatter fields for a collection from its spec."""
+    fields = ["id"] if spec["has_id"] else []
+    fields += ["slug", "title", "publishedDate"]
+    if spec["has_category"]:
+        fields.append("category")
+    fields.append("isDraft")
+    return fields
+
+
+def validate(path: Path, spec: dict, categories: list[str], allow: set[str]) -> tuple[list[str], list[str]]:
     """Return (errors, warnings) for a single file. Errors break the Astro build;
     warnings are convention issues that don't."""
     errors: list[str] = []
@@ -240,11 +287,11 @@ def validate(path: Path, categories: list[str], allow: set[str]) -> tuple[list[s
         return ["missing or malformed frontmatter (--- ... ---)"], []
     fields, body = parsed
 
-    for field in REQUIRED_FIELDS:
+    for field in required_fields(spec):
         if field not in fields:
             errors.append(f"missing required field '{field}'")
 
-    if "id" in fields and not fields["id"].lstrip("-").isdigit():
+    if spec["has_id"] and "id" in fields and not fields["id"].lstrip("-").isdigit():
         errors.append(f"id must be a number, got '{fields['id']}'")
 
     if "slug" in fields:
@@ -256,8 +303,9 @@ def validate(path: Path, categories: list[str], allow: set[str]) -> tuple[list[s
         if slug != path.stem:
             warnings.append(f"slug '{slug}' does not match filename '{path.stem}'")
 
-    if "title" in fields and len(fields["title"]) > 50:
-        errors.append(f"title exceeds 50 chars ({len(fields['title'])})")
+    title_max = spec["title_max"]
+    if "title" in fields and len(fields["title"]) > title_max:
+        errors.append(f"title exceeds {title_max} chars ({len(fields['title'])})")
 
     if "publishedDate" in fields:
         try:
@@ -265,10 +313,10 @@ def validate(path: Path, categories: list[str], allow: set[str]) -> tuple[list[s
         except ValueError:
             errors.append(f"publishedDate must be YYYY-MM-DD, got '{fields['publishedDate']}'")
 
-    if "category" in fields and fields["category"] not in categories:
+    if spec["has_category"] and "category" in fields and fields["category"] not in categories:
         errors.append(f"category '{fields['category']}' not in {categories}")
 
-    if "readingTime" in fields and not fields["readingTime"].isdigit():
+    if spec["has_reading_time"] and "readingTime" in fields and not fields["readingTime"].isdigit():
         errors.append(f"readingTime must be a number, got '{fields['readingTime']}'")
 
     if "isDraft" in fields and fields["isDraft"] not in ("true", "false"):
@@ -282,51 +330,42 @@ def validate(path: Path, categories: list[str], allow: set[str]) -> tuple[list[s
     return errors, warnings
 
 
-def main() -> int:
-    if not BLOG_DIR.is_dir():
-        sys.exit(f"ERROR: blog dir not found: {BLOG_DIR}")
-
-    removed = clean_appledouble()
-    if removed:
-        print(f"{AMBER}🧹 Removed {removed} macOS AppleDouble (._*) file(s).{RESET}\n")
-
-    categories = load_categories()
-    allow = load_allowlist()
-    files = sorted(p for p in BLOG_DIR.rglob("*.md") if not p.name.startswith("._"))
+def process_collection(spec: dict, categories: list[str], allow: set[str]) -> tuple[int, int, int]:
+    """Lint one collection. Returns (errors, warnings, file_count)."""
+    files = sorted(p for p in spec["dir"].rglob("*.md") if not p.name.startswith("._"))
+    print(f"\n{GREEN}// {spec['name']}{RESET} ({len(files)} file(s))")
     if not files:
-        print("No markdown files found.")
-        return 0
+        return 0, 0, 0
 
-    if get_speller() is False:
-        print(f"{AMBER}⚠️  wordfreq not installed; spell check skipped. "
-              f"Run: .venv/bin/pip install wordfreq{RESET}\n")
+    if spec["has_id"]:
+        for path, old, new in assign_ids(files):
+            print(f"{GREEN}🔢 {path.relative_to(ROOT)}: id {old} → {new}{RESET}")
 
-    for path, old, new in assign_ids(files):
-        rel = path.relative_to(ROOT)
-        print(f"{GREEN}🔢 {rel}: id {old} → {new}{RESET}")
-
-    total_errors = 0
-    total_warnings = 0
+    errors_total = 0
+    warnings_total = 0
     seen_ids: dict[str, Path] = {}
     seen_slugs: dict[str, Path] = {}
 
     for path in files:
         rel = path.relative_to(ROOT)
-        minutes, changed = apply_reading_time(path)
-        errors, warnings = validate(path, categories, allow)
+        minutes = changed = None
+        if spec["has_reading_time"]:
+            minutes, changed = apply_reading_time(path)
+        errors, warnings = validate(path, spec, categories, allow)
 
         parsed = parse_frontmatter(path.read_text(encoding="utf-8"))
         if parsed:
             fields = parsed[0]
-            for key, store in (("id", seen_ids), ("slug", seen_slugs)):
+            dup_keys = [("slug", seen_slugs)] + ([("id", seen_ids)] if spec["has_id"] else [])
+            for key, store in dup_keys:
                 value = fields.get(key)
                 if value and value in store:
                     errors.append(f"duplicate {key} '{value}' (also in {store[value].name})")
                 elif value:
                     store[value] = path
 
-        total_errors += len(errors)
-        total_warnings += len(warnings)
+        errors_total += len(errors)
+        warnings_total += len(warnings)
 
         if errors:
             print(f"\n{RED}❌ {rel}{RESET}")
@@ -339,8 +378,38 @@ def main() -> int:
             print(f"    {RED}- {err}{RESET}")
         for warn in warnings:
             print(f"    {AMBER}- {warn}{RESET}")
-        note = "updated" if changed else "unchanged"
-        print(f"    {GREEN}- readingTime: {minutes} min ({note}){RESET}")
+        if minutes is not None:
+            note = "updated" if changed else "unchanged"
+            print(f"    {GREEN}- readingTime: {minutes} min ({note}){RESET}")
+
+    return errors_total, warnings_total, len(files)
+
+
+def main() -> int:
+    ensure_venv()
+
+    if not CONTENT.is_dir():
+        sys.exit(f"ERROR: content dir not found: {CONTENT}")
+
+    removed = clean_appledouble()
+    if removed:
+        print(f"{AMBER}🧹 Removed {removed} macOS AppleDouble (._*) file(s).{RESET}")
+
+    if get_speller() is False:
+        print(f"{AMBER}⚠️  wordfreq not installed; spell check skipped. "
+              f"Run: .venv/bin/pip install wordfreq{RESET}")
+
+    categories = load_categories()
+    allow = load_allowlist()
+
+    total_errors = 0
+    total_warnings = 0
+    total_files = 0
+    for spec in COLLECTIONS:
+        errors, warnings, count = process_collection(spec, categories, allow)
+        total_errors += errors
+        total_warnings += warnings
+        total_files += count
 
     print()
     if total_errors:
@@ -349,7 +418,7 @@ def main() -> int:
     if total_warnings:
         print(f"{AMBER}⚠️  {total_warnings} warning(s){RESET}, no errors.")
         return 0
-    print(f"{GREEN}✅ All {len(files)} file(s) valid.{RESET}")
+    print(f"{GREEN}✅ All {total_files} file(s) valid.{RESET}")
     return 0
 
 
