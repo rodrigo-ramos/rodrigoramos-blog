@@ -23,6 +23,6 @@ Hoy para mi eso es la vida e integro mis conocimientos de todos los campos a la 
 
 ## Ceremonias
 
-Las ceremonías, a diferencia de las rutinas, son acciones que ejecutamos por una razón específica, como son los preparativos para leer: preparar una taza de café en la taza que te gusta, un sillón específico y su iluminación ad hoc para conectar con tu texto (y tu entorno). A veces algo de aroma o un elemento sonoro que favorezca el momento. Te avisas que es momento de estar presente. Te avisas que es un regalo que te colocas de ti para ti. 
+Las ceremonias, a diferencia de las rutinas, son acciones que ejecutamos por una razón específica, como son los preparativos para leer: preparar una taza de café en la taza que te gusta, un sillón específico y su iluminación ad hoc para conectar con tu texto (y tu entorno). A veces algo de aroma o un elemento sonoro que favorezca el momento. Te avisas que es momento de estar presente. Te avisas que es un regalo que te colocas de ti para ti. 
 
 Me queda claro que algunas personas buscan el dinero a como de lugar. Desde hace unos años me saltó en la cara cuando mi gente alrededor era en lo único que ocupaba su cabeza: generar más dinero. Para mi es algo distinto, es *cómo conseguir más tiempo libre con una economía saludable*. No quiero decir que desprecio la plata, solo que hago cuentas de lo que mi vida es y será. Un trabajo el triple de pagado por el doble de tiempo no me seduce. 
