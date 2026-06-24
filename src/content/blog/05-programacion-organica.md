@@ -1,6 +1,6 @@
 ---
 id: 5
-slug: "programacion-organica"
+slug: "05-programacion-organica"
 title: "Programación Orgánica"
 publishedDate: 2026-06-01
 category: "systems"

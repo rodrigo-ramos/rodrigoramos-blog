@@ -1,6 +1,6 @@
 ---
 id: 7
-slug: "read-lessons"
+slug: "07-read-lessons"
 title: "Aprendí a leer en el transporte público"
 publishedDate: 2026-06-07
 category: "me"

@@ -1,6 +1,6 @@
 ---
 id: 6
-slug: "tech-lessons"
+slug: "06-tech-lessons"
 title: "Lecciones de vida tecnólogo"
 publishedDate: 2026-06-02
 category: "systems"
