@@ -3,7 +3,7 @@ id: 11
 slug: "11-avisame-antes"
 title: "Avísame 2 horas antes"
 publishedDate: 2026-08-13
-category: "rutine"
+category: "me"
 readingTime: 1
 isDraft: false
 ---
