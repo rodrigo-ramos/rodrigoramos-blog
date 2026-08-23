@@ -16,5 +16,16 @@
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.4.2",
     "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "@tiptap/core": "^2.27.2",
+    "@tiptap/extension-bubble-menu": "^2.27.2",
+    "@tiptap/extension-floating-menu": "^2.27.2",
+    "@tiptap/extension-image": "^2.27.2",
+    "@tiptap/extension-link": "^2.27.2",
+    "@tiptap/extension-placeholder": "^2.27.2",
+    "@tiptap/pm": "^2.27.2",
+    "@tiptap/starter-kit": "^2.27.2",
+    "tiptap-markdown": "^0.8.10"
   }
 }

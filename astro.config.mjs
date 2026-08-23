@@ -2,6 +2,7 @@
 import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from "@astrojs/sitemap";
+import blogEditor from "./editor/integration.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -27,5 +28,5 @@ export default defineConfig({
     plugins: [tailwindcss()]
   },
   site: "https://renacentista.dev",
-  integrations: [sitemap()]
+  integrations: [sitemap(), blogEditor()]
 });
