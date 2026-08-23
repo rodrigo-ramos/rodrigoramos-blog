@@ -79,8 +79,9 @@ lectura; microfiction y audiofilia no, y admiten títulos de 80 caracteres.
 - En local el índice viene del último `npm run build`. Si `/search` dice
   *"search index not built yet"*, corre un build.
 - Se busca por **palabra completa**: cada término va entrecomillado contra Pagefind, que
-  de otro modo trata la última palabra como prefijo (buscar `Augusto` devolvía todo lo que
-  empieza con `a`). Con varias palabras se cruzan los resultados de cada una.
+  de otro modo trata la última palabra como prefijo (una palabra que empieza con `a`
+  devolvía todo lo que empieza con `a`). Con varias palabras se cruzan los resultados de
+  cada una.
 - Se indexa lo que esté dentro de `data-pagefind-body`, presente en las tres plantillas de
   detalle (`blog`, `microfiction`, `audiofilia`).
 
