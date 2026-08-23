@@ -1,15 +1,21 @@
-// Dev-only Medium-style editor for the blog content collection.
+// Dev-only Medium-style editor for the content collections.
 // Routes and API middleware are registered exclusively during `astro dev`;
 // `astro build` never sees them, so nothing ships to production.
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 
-const BLOG_DIR = 'src/content/blog';
 const IMAGES_DIR = 'public/images/blog';
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,49}$/;
 const CATEGORIES = ['systems', 'ai', 'productivity', 'security', 'cloud', 'ideas', 'reading', 'philosophy', 'me'];
+
+// Collections the editor can write to, mapped to the nav link where posts appear.
+const COLLECTIONS = {
+  blog: { dir: 'src/content/blog', nav: '/journal', maxTitle: 50, full: true },
+  microfiction: { dir: 'src/content/microfiction', nav: '/microfiction', maxTitle: 80, full: false },
+  audiofilia: { dir: 'src/content/audiofilia', nav: '/audiofilia', maxTitle: 80, full: false },
+};
 
 let projectRoot = process.cwd();
 
@@ -30,29 +36,50 @@ function parseFrontmatter(raw) {
   return { frontmatter, body: raw.slice(match[0].length) };
 }
 
-function serializeFrontmatter(fm) {
+function serializeFrontmatter(fm, collection) {
   const quote = (s) => `"${String(s).replaceAll('"', '\\"')}"`;
-  const lines = [
-    `id: ${fm.id}`,
-    `slug: ${quote(fm.slug)}`,
-    `title: ${quote(fm.title)}`,
-    `publishedDate: ${fm.publishedDate}`,
-    `category: ${quote(fm.category)}`,
-  ];
-  if (fm.readingTime != null) lines.push(`readingTime: ${fm.readingTime}`);
+  const lines = [];
+  if (COLLECTIONS[collection].full) lines.push(`id: ${fm.id}`);
+  lines.push(`slug: ${quote(fm.slug)}`, `title: ${quote(fm.title)}`, `publishedDate: ${fm.publishedDate}`);
+  if (COLLECTIONS[collection].full) {
+    lines.push(`category: ${quote(fm.category)}`);
+    if (fm.readingTime != null) lines.push(`readingTime: ${fm.readingTime}`);
+  }
   lines.push(`isDraft: ${fm.isDraft}`);
   return `---\n${lines.join('\n')}\n---\n`;
 }
 
-function validatePost({ frontmatter: fm, body }) {
+function validatePost({ collection, frontmatter: fm, body }) {
+  const col = COLLECTIONS[collection];
+  if (!col) return 'collection inválida';
   if (!fm || typeof body !== 'string') return 'Payload incompleto';
-  if (!Number.isInteger(fm.id) || fm.id < 1) return 'id inválido';
   if (!SLUG_RE.test(fm.slug ?? '')) return 'slug inválido (kebab-case, máx 50)';
-  if (!fm.title || fm.title.length > 50) return 'title requerido (máx 50)';
+  if (!fm.title || fm.title.length > col.maxTitle) return `title requerido (máx ${col.maxTitle})`;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fm.publishedDate ?? '')) return 'publishedDate inválida (YYYY-MM-DD)';
-  if (!CATEGORIES.includes(fm.category)) return 'category inválida';
   if (typeof fm.isDraft !== 'boolean') return 'isDraft requerido';
+  if (col.full) {
+    if (!Number.isInteger(fm.id) || fm.id < 1) return 'id inválido';
+    if (!CATEGORIES.includes(fm.category)) return 'category inválida';
+  }
   return null;
+}
+
+async function readCollection(collection) {
+  const dir = path.join(projectRoot, COLLECTIONS[collection].dir);
+  const files = (await fs.readdir(dir)).filter((f) => f.endsWith('.md'));
+  const entries = [];
+  for (const file of files) {
+    const raw = await fs.readFile(path.join(dir, file), 'utf8');
+    const { frontmatter, body } = parseFrontmatter(raw);
+    entries.push({ file, collection, nav: COLLECTIONS[collection].nav, frontmatter, body });
+  }
+  return entries;
+}
+
+// The filename does not always match the slug, so resolve entries by frontmatter.
+async function findEntry(collection, slug) {
+  const entries = await readCollection(collection);
+  return entries.find((e) => e.frontmatter.slug === slug) ?? null;
 }
 
 async function readBody(req, limit = 25 * 1024 * 1024) {
@@ -72,49 +99,41 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-async function listPosts() {
-  const dir = path.join(projectRoot, BLOG_DIR);
-  const files = (await fs.readdir(dir)).filter((f) => f.endsWith('.md'));
-  const posts = [];
-  for (const file of files) {
-    const raw = await fs.readFile(path.join(dir, file), 'utf8');
-    const { frontmatter, body } = parseFrontmatter(raw);
-    posts.push({ file, ...frontmatter, words: body.trim().split(/\s+/).length });
-  }
-  posts.sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
-  return posts;
-}
-
 async function handleApi(req, res) {
   const url = new URL(req.url, 'http://localhost');
-  const parts = url.pathname.split('/').filter(Boolean); // e.g. ['posts', 'slug']
+  const parts = url.pathname.split('/').filter(Boolean); // ['posts', collection?, slug?]
 
   if (req.method === 'GET' && parts[0] === 'posts' && parts.length === 1) {
-    return sendJson(res, 200, { posts: await listPosts(), categories: CATEGORIES });
+    const posts = [];
+    for (const name of Object.keys(COLLECTIONS)) {
+      for (const e of await readCollection(name)) {
+        posts.push({ collection: e.collection, nav: e.nav, file: e.file, ...e.frontmatter });
+      }
+    }
+    posts.sort((a, b) => (a.publishedDate < b.publishedDate ? 1 : -1));
+    const collections = Object.fromEntries(Object.entries(COLLECTIONS).map(([k, v]) => [k, { nav: v.nav, full: v.full, maxTitle: v.maxTitle }]));
+    return sendJson(res, 200, { posts, categories: CATEGORIES, collections });
   }
 
-  if (req.method === 'GET' && parts[0] === 'posts' && parts.length === 2) {
-    const slug = parts[1];
-    if (!SLUG_RE.test(slug)) return sendJson(res, 400, { error: 'slug inválido' });
-    const filePath = path.join(projectRoot, BLOG_DIR, `${slug}.md`);
-    try {
-      const raw = await fs.readFile(filePath, 'utf8');
-      const { frontmatter, body } = parseFrontmatter(raw);
-      return sendJson(res, 200, { frontmatter, body });
-    } catch {
-      return sendJson(res, 404, { error: 'Post no encontrado' });
-    }
+  if (req.method === 'GET' && parts[0] === 'posts' && parts.length === 3) {
+    const [, collection, slug] = parts;
+    if (!COLLECTIONS[collection] || !SLUG_RE.test(slug)) return sendJson(res, 400, { error: 'ruta inválida' });
+    const entry = await findEntry(collection, slug);
+    if (!entry) return sendJson(res, 404, { error: 'Post no encontrado' });
+    return sendJson(res, 200, { collection, nav: entry.nav, frontmatter: entry.frontmatter, body: entry.body });
   }
 
   if (req.method === 'POST' && parts[0] === 'posts') {
     const payload = JSON.parse(await readBody(req));
     const error = validatePost(payload);
     if (error) return sendJson(res, 400, { error });
-    const { frontmatter: fm, body } = payload;
-    const filePath = path.join(projectRoot, BLOG_DIR, `${fm.slug}.md`);
-    const content = serializeFrontmatter(fm) + '\n' + body.replace(/\s+$/, '') + '\n';
+    const { collection, frontmatter: fm, body } = payload;
+    const existing = await findEntry(collection, fm.slug);
+    const fileName = existing?.file ?? `${fm.slug}.md`;
+    const filePath = path.join(projectRoot, COLLECTIONS[collection].dir, fileName);
+    const content = serializeFrontmatter(fm, collection) + '\n' + body.replace(/\s+$/, '') + '\n';
     await fs.writeFile(filePath, content, 'utf8');
-    return sendJson(res, 200, { ok: true, file: `${fm.slug}.md` });
+    return sendJson(res, 200, { ok: true, file: fileName });
   }
 
   if (req.method === 'POST' && parts[0] === 'upload') {

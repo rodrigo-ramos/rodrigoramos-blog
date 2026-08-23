@@ -15,6 +15,7 @@ export const prerender = false;
       <div class="topbar-inner">
         <a href="#/" id="brand">renacentista<span>.dev</span></a>
         <div class="topbar-right">
+          <span id="navChip" class="nav-chip" hidden></span>
           <span id="status"></span>
           <button id="saveBtn" class="btn-ghost" hidden>Guardar</button>
           <button id="publishBtn" class="btn-green" hidden>Publicar…</button>
@@ -67,10 +68,13 @@ export const prerender = false;
     <div id="panelOverlay" hidden></div>
     <aside id="publishPanel" hidden>
       <h2>Publicación</h2>
+      <label>Sección (nav link donde aparece)
+        <select id="fldSection"></select>
+      </label>
       <label>Slug
         <input id="fldSlug" type="text" maxlength="50" spellcheck="false" />
       </label>
-      <label>Categoría
+      <label id="lblCategory">Categoría
         <select id="fldCategory"></select>
       </label>
       <label>Fecha de publicación
@@ -80,7 +84,7 @@ export const prerender = false;
         <input id="fldDraft" type="checkbox" />
         <span>Borrador (no se publica en el sitio)</span>
       </label>
-      <p class="hint">Tiempo de lectura: <span id="fldReading">–</span> min (automático)</p>
+      <p class="hint" id="hintReading">Tiempo de lectura: <span id="fldReading">–</span> min (automático)</p>
       <button id="panelSaveBtn" class="btn-green wide">Guardar</button>
     </aside>
 
@@ -107,7 +111,8 @@ export const prerender = false;
 
       let posts = [];
       let categories = [];
-      let current = null; // { fm, isNew }
+      let collectionsMeta = {}; // { blog: { nav, full, maxTitle }, ... }
+      let current = null; // { fm, isNew, collection }
       let dirty = false;
       let editor = null;
 
@@ -243,17 +248,34 @@ export const prerender = false;
       });
 
       function syncNewSlug() {
-        const prefix = String(current.fm.id).padStart(2, '0');
-        current.fm.slug = `${prefix}-${kebab(titleInput.value)}`.slice(0, 50).replace(/-+$/, '');
+        const isFull = collectionsMeta[current.collection].full;
+        const prefix = isFull ? `${String(current.fm.id).padStart(2, '0')}-` : '';
+        current.fm.slug = `${prefix}${kebab(titleInput.value)}`.slice(0, 50).replace(/-+$/, '');
         $('fldSlug').value = current.fm.slug;
+      }
+
+      function applySection(collection) {
+        current.collection = collection;
+        const meta = collectionsMeta[collection];
+        $('navChip').textContent = meta.nav;
+        titleInput.maxLength = meta.maxTitle;
+        $('lblCategory').hidden = !meta.full;
+        $('hintReading').hidden = !meta.full;
+        if (meta.full && current.fm.id == null) {
+          current.fm.id = posts.filter((p) => p.collection === 'blog').reduce((m, p) => Math.max(m, p.id ?? 0), 0) + 1;
+          current.fm.category ??= 'ideas';
+        }
+        if (current.isNew) syncNewSlug();
       }
 
       // ---------- publish panel ----------
       function openPanel() {
         const fm = current.fm;
+        $('fldSection').value = current.collection;
+        $('fldSection').disabled = !current.isNew;
         $('fldSlug').value = fm.slug;
         $('fldSlug').disabled = !current.isNew;
-        $('fldCategory').value = fm.category;
+        if (fm.category) $('fldCategory').value = fm.category;
         $('fldDate').value = fm.publishedDate;
         $('fldDraft').checked = fm.isDraft;
         $('fldReading').textContent = readingTime(editor.storage.markdown.getMarkdown());
@@ -266,10 +288,16 @@ export const prerender = false;
       }
       $('panelOverlay').addEventListener('click', closePanel);
       $('publishBtn').addEventListener('click', openPanel);
+      $('fldSection').addEventListener('change', () => {
+        if (current?.isNew) {
+          applySection($('fldSection').value);
+          $('fldSlug').value = current.fm.slug;
+        }
+      });
       $('panelSaveBtn').addEventListener('click', async () => {
         const fm = current.fm;
         if (current.isNew) fm.slug = $('fldSlug').value.trim();
-        fm.category = $('fldCategory').value;
+        if (collectionsMeta[current.collection].full) fm.category = $('fldCategory').value;
         fm.publishedDate = $('fldDate').value;
         fm.isDraft = $('fldDraft').checked;
         setDirty(true);
@@ -280,14 +308,15 @@ export const prerender = false;
       async function save() {
         if (!current || !editor) return false;
         const body = editor.storage.markdown.getMarkdown();
-        const fm = { ...current.fm, title: titleInput.value.trim(), readingTime: readingTime(body) };
+        const fm = { ...current.fm, title: titleInput.value.trim() };
+        if (collectionsMeta[current.collection].full) fm.readingTime = readingTime(body);
         if (!fm.title) { toast('Ponle un título primero', true); return false; }
         try {
-          await api('/posts', { method: 'POST', body: JSON.stringify({ frontmatter: fm, body }) });
+          await api('/posts', { method: 'POST', body: JSON.stringify({ collection: current.collection, frontmatter: fm, body }) });
           current.fm = fm;
           if (current.isNew) {
             current.isNew = false;
-            history.replaceState(null, '', `#/edit/${fm.slug}`);
+            history.replaceState(null, '', `#/edit/${current.collection}/${fm.slug}`);
           }
           setDirty(false);
           toast(`Guardado en ${fm.slug}.md`);
@@ -319,26 +348,30 @@ export const prerender = false;
         $('floatingMenu').hidden = true;
         $('saveBtn').hidden = true;
         $('publishBtn').hidden = true;
+        $('navChip').hidden = true;
         $('newBtn').hidden = false;
         $('listView').hidden = false;
         const rows = posts.map((p) => `
-          <a class="story" href="#/edit/${p.slug}">
+          <a class="story" href="#/edit/${p.collection}/${p.slug}">
             <h2>${p.title}</h2>
             <p class="meta">
-              ${fmtDate(p.publishedDate)} · ${p.category} · ${p.readingTime ?? 1} min
+              <span class="navtag">${p.nav}</span>
+              ${fmtDate(p.publishedDate)}${p.category ? ` · ${p.category}` : ''}${p.readingTime ? ` · ${p.readingTime} min` : ''}
               ${p.isDraft ? '<span class="pill">Borrador</span>' : ''}
             </p>
           </a>`);
         $('storyList').innerHTML = rows.join('') || '<p class="meta">Sin historias todavía.</p>';
       }
 
-      function showWrite(fm, body, isNew) {
-        current = { fm, isNew };
+      function showWrite(fm, body, isNew, collection) {
+        current = { fm, isNew, collection };
         $('listView').hidden = true;
         $('writeView').hidden = false;
         $('saveBtn').hidden = false;
         $('publishBtn').hidden = false;
+        $('navChip').hidden = false;
         $('newBtn').hidden = true;
+        applySection(collection);
         titleInput.value = fm.title;
         growTitle();
         createEditor(body);
@@ -349,17 +382,17 @@ export const prerender = false;
       async function route() {
         const hash = location.hash || '#/';
         if (hash === '#/new') {
-          const maxId = posts.reduce((m, p) => Math.max(m, p.id ?? 0), 0);
+          const maxId = posts.filter((p) => p.collection === 'blog').reduce((m, p) => Math.max(m, p.id ?? 0), 0);
           showWrite(
             { id: maxId + 1, slug: `${String(maxId + 1).padStart(2, '0')}-`, title: '',
               publishedDate: todayISO(), category: 'ideas', isDraft: true },
-            '', true,
+            '', true, 'blog',
           );
         } else if (hash.startsWith('#/edit/')) {
-          const slug = hash.slice('#/edit/'.length);
+          const [collection, slug] = hash.slice('#/edit/'.length).split('/');
           try {
-            const { frontmatter, body } = await api(`/posts/${slug}`);
-            showWrite(frontmatter, body, false);
+            const { frontmatter, body } = await api(`/posts/${collection}/${slug}`);
+            showWrite(frontmatter, body, false, collection);
           } catch (err) {
             toast(err.message, true);
             location.hash = '#/';
@@ -377,7 +410,10 @@ export const prerender = false;
         const data = await api('/posts');
         posts = data.posts;
         categories = data.categories;
+        collectionsMeta = data.collections;
         $('fldCategory').innerHTML = categories.map((c) => `<option value="${c}">${c}</option>`).join('');
+        $('fldSection').innerHTML = Object.entries(collectionsMeta)
+          .map(([name, m]) => `<option value="${name}">${m.nav}</option>`).join('');
         route();
       })();
     </script>
@@ -416,6 +452,8 @@ export const prerender = false;
       .story:hover h2 { color: #000; text-decoration: underline; }
       .meta { font-size: 13.5px; color: var(--gray); }
       .pill { display: inline-block; margin-left: 8px; padding: 1px 9px; border: 1px solid #d9a900; color: #8a6d00; border-radius: 99px; font-size: 12px; }
+      .navtag { display: inline-block; margin-right: 8px; padding: 1px 9px; background: var(--line); color: var(--gray); border-radius: 4px; font-size: 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+      .nav-chip { padding: 2px 10px; background: var(--line); color: var(--gray); border-radius: 4px; font-size: 13px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
 
       /* ---- write view ---- */
       #writeView { max-width: 740px; margin: 0 auto; padding: 48px 24px 40vh; }
