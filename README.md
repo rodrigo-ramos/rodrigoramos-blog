@@ -61,7 +61,8 @@ monta **solo en `astro dev`**: `astro build` no lo ve, así que nunca llega a Ve
    (se copia a `public/images/blog/` y queda enlazada), bloque de código o separador.
    También funcionan los atajos de Markdown al teclear: `##`, `>`, `-`.
 4. **⌘S** guarda. Arriba dice "Sin guardar" mientras hay cambios y "Guardado" cuando ya
-   está en disco. Nace como borrador: lo ves en el sitio local pero no se publica.
+   está en disco. Nace como borrador, y un borrador no entra al build: no se lista, no
+   genera página y no se indexa, ni siquiera si le llega el enlace directo.
 5. **Publicar…** abre el panel: sección (solo al crear), slug, categoría (solo journal),
    fecha y la casilla de borrador. Desmarcas "Borrador" y guardas.
 6. `git add` + commit + push manual. Vercel despliega y regenera el índice de búsqueda.
