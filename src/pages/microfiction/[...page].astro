@@ -32,15 +32,17 @@ const { page } = Astro.props;
         title="Microfiction"
         titleHeading="Microrelatos"
     >
-        {
-            page.data.map((story) => (
-                <MicrofictionCard
-                    title={story.data.title}
-                    publishedDate={story.data.publishedDate}
-                    slug={story.data.slug}
-                />
-            ))
-        }
+        <div class="grid md:grid-cols-3 gap-16">
+            {
+                page.data.map((story) => (
+                    <MicrofictionCard
+                        title={story.data.title}
+                        publishedDate={story.data.publishedDate}
+                        slug={story.data.slug}
+                    />
+                ))
+            }
+        </div>
         <Pagination prev={page.url.prev} next={page.url.next} />
     </Section>
 </Layout>

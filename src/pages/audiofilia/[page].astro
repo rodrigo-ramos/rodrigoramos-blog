@@ -1,0 +1,46 @@
+---
+// layout
+import Layout from "../../layout/Layout.astro"
+
+// utils
+import { formatDate } from "../../utils/formatDate";
+
+// components
+import Section from "../../components/elements/Section.astro";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { render } from "astro:content";
+import { getCollection } from "astro:content";
+export const getStaticPaths = (async () => {
+    const audiofilia = await getCollection("audiofilia");
+    return audiofilia.map((note) => ({
+        params: {
+            page: note.data.slug
+        },
+        props: {
+            note
+        }
+    }))
+}) satisfies GetStaticPaths;
+
+// props
+const { note } = Astro.props;
+const { Content } = await render(note);
+const { title, publishedDate } = note.data;
+---
+
+<Layout
+    title={title}
+    description=""
+    ogImage=""
+>
+    <Section
+        title=`Published On: ${formatDate(publishedDate)}`
+        titleHeading={title}
+    >
+    <div class="markdown-content flex flex-col gap-24">
+        <Content />
+    </div>
+    </Section>
+</Layout>

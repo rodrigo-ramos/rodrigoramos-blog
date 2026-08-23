@@ -1,0 +1,54 @@
+---
+// layout
+import Layout from "../../layout/Layout.astro";
+
+// components
+import Section from "../../components/elements/Section.astro";
+import AudiofiliaCard from "../../components/elements/AudiofiliaCard.astro";
+import Pagination from "../../components/elements/Pagination.astro";
+import Text from "../../components/elements/Text.astro";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+export const getStaticPaths = (async ({paginate}) => {
+    const audiofilia = await getCollection("audiofilia");
+    const sorted = audiofilia.sort(
+        (a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime()
+    );
+    return paginate(sorted, {pageSize: 20})
+}) satisfies GetStaticPaths;
+
+// props
+const { page } = Astro.props;
+---
+
+<Layout
+    title="Audiofilia"
+    description="Notas de escucha, equipo hi-fi y álbumes completos — Rodrigo Ramos."
+    canonical="https://renacentista.dev/audiofilia"
+>
+    <Section
+        aria-label="Audiofilia"
+        title="Audiofilia"
+        titleHeading="Escuchar con intención"
+    >
+        <div class="flex flex-col gap-16 text-base-400">
+            <Text variant={'normal'}>Aquí escribo sobre escuchar música con atención: álbumes completos, de principio a fin, sin ruido de fondo.</Text>
+            <Text variant={'normal'}>Notas sobre equipo, grabaciones en alta resolución y discos que merecen una escucha dedicada.</Text>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-16">
+            {
+                page.data.map((note) => (
+                    <AudiofiliaCard
+                        title={note.data.title}
+                        publishedDate={note.data.publishedDate}
+                        slug={note.data.slug}
+                    />
+                ))
+            }
+        </div>
+        <Pagination prev={page.url.prev} next={page.url.next} />
+    </Section>
+</Layout>
