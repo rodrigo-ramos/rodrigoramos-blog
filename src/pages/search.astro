@@ -1,0 +1,112 @@
+---
+// layout
+import Layout from "../layout/Layout.astro";
+
+// components
+import Section from "../components/elements/Section.astro";
+---
+
+<Layout
+    title="Search"
+    description="Search across the journal, microfiction and audiofilia archives."
+    ogImage=""
+>
+    <Section
+        aria-label="Search"
+        title="Search"
+        titleHeading="grep -ri the archive"
+    >
+        <div class="flex flex-col gap-24">
+            <label class="flex items-center gap-8 border-2 border-base-700 focus-within:border-base-400 px-16 py-12">
+                <span class="font-pixels text-24 text-base-400 select-none" aria-hidden="true">&gt;</span>
+                <input
+                    id="search-input"
+                    type="search"
+                    placeholder="type to search…"
+                    autocomplete="off"
+                    spellcheck="false"
+                    class="w-full bg-transparent font-pixels text-24 text-base-100 placeholder-base-700 outline-none"
+                />
+            </label>
+            <p id="search-status" class="font-mono text-14 text-base-700"></p>
+            <ul id="search-results" class="flex flex-col gap-32 list-none"></ul>
+        </div>
+    </Section>
+</Layout>
+
+<style>
+    #search-results :global(mark) {
+        background-color: var(--color-base-300);
+        color: var(--color-base-950);
+        padding: 0 0.15em;
+    }
+</style>
+
+<script>
+    const input = document.getElementById("search-input") as HTMLInputElement;
+    const status = document.getElementById("search-status")!;
+    const list = document.getElementById("search-results")!;
+
+    let pagefind: any = null;
+
+    async function loadPagefind(): Promise<boolean> {
+        if (pagefind) return true;
+        try {
+            const bundleUrl = "/pagefind/pagefind.js"; // resolved at runtime, generated post-build
+            pagefind = await import(/* @vite-ignore */ bundleUrl);
+            await pagefind.init();
+            return true;
+        } catch {
+            status.textContent = "search index not built yet — run a build first.";
+            return false;
+        }
+    }
+
+    function render(results: any[], term: string) {
+        list.innerHTML = "";
+        status.textContent = results.length
+            ? `${results.length} match${results.length === 1 ? "" : "es"} for "${term}"`
+            : `no matches for "${term}"`;
+        for (const r of results) {
+            const li = document.createElement("li");
+            li.className = "flex flex-col gap-8";
+
+            const a = document.createElement("a");
+            a.href = r.url;
+            a.textContent = r.meta?.title ?? r.url;
+            a.className = "font-pixels text-24 text-base-100 hover:text-base-300 underline w-fit";
+
+            const excerpt = document.createElement("p");
+            excerpt.className = "font-mono text-14 text-base-300";
+            excerpt.innerHTML = r.excerpt; // pagefind escapes content and only injects <mark>
+
+            li.append(a, excerpt);
+            list.append(li);
+        }
+    }
+
+    async function run(term: string) {
+        if (!term.trim()) {
+            list.innerHTML = "";
+            status.textContent = "";
+            return;
+        }
+        if (!(await loadPagefind())) return;
+        const search = await pagefind.debouncedSearch(term);
+        if (search === null) return; // superseded by a newer keystroke
+        const results = await Promise.all(search.results.slice(0, 20).map((r: any) => r.data()));
+        render(results, term);
+        const url = new URL(location.href);
+        url.searchParams.set("q", term);
+        history.replaceState(null, "", url);
+    }
+
+    input.addEventListener("input", () => run(input.value));
+
+    const initial = new URLSearchParams(location.search).get("q");
+    if (initial) {
+        input.value = initial;
+        run(initial);
+    }
+    input.focus();
+</script>

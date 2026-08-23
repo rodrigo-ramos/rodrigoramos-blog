@@ -39,7 +39,7 @@ const { title, category, publishedDate } = article.data;
         title=`Published On: ${formatDate(publishedDate)}`
         titleHeading=`#${category}`
     >
-    <div class="markdown-content flex flex-col gap-24">
+    <div class="markdown-content flex flex-col gap-24" data-pagefind-body>
         <Content />
     </div>
     </Section>
