@@ -48,18 +48,23 @@ import Section from "../components/elements/Section.astro";
     const list = document.getElementById("search-results")!;
 
     let pagefind: any = null;
+    let loading: Promise<boolean> | null = null;
 
-    async function loadPagefind(): Promise<boolean> {
-        if (pagefind) return true;
-        try {
-            const bundleUrl = "/pagefind/pagefind.js"; // resolved at runtime, generated post-build
-            pagefind = await import(/* @vite-ignore */ bundleUrl);
-            await pagefind.init();
-            return true;
-        } catch {
-            status.textContent = "search index not built yet — run a build first.";
-            return false;
-        }
+    // Must stay idempotent: initialising Pagefind twice deadlocks its worker.
+    function loadPagefind(): Promise<boolean> {
+        loading ??= (async () => {
+            try {
+                const bundleUrl = "/pagefind/pagefind.js"; // resolved at runtime, generated post-build
+                const mod = await import(/* @vite-ignore */ bundleUrl);
+                await mod.init();
+                pagefind = mod;
+                return true;
+            } catch {
+                status.textContent = "search index not built yet — run a build first.";
+                return false;
+            }
+        })();
+        return loading;
     }
 
     function render(results: any[], term: string) {
@@ -85,23 +90,50 @@ import Section from "../components/elements/Section.astro";
         }
     }
 
+    // Pagefind treats a bare term as a prefix, so "Augusto" ends up matching
+    // everything that starts with "a". Quoting pins it to the whole word, but
+    // Pagefind cannot AND several quoted phrases — so intersect them here.
+    async function searchWholeWords(term: string) {
+        const words = term.replace(/"/g, " ").split(/\s+/).filter(Boolean);
+        if (!words.length) return [];
+
+        const runs = [];
+        for (const word of words) runs.push(await pagefind.search(`"${word}"`)); // concurrent calls deadlock the worker
+        const [first, ...rest] = runs;
+        return first.results.filter((r: any) => rest.every((run: any) => run.results.some((o: any) => o.id === r.id)));
+    }
+
+    let token = 0;
+
     async function run(term: string) {
+        const mine = ++token;
         if (!term.trim()) {
             list.innerHTML = "";
             status.textContent = "";
             return;
         }
-        if (!(await loadPagefind())) return;
-        const search = await pagefind.debouncedSearch(term);
-        if (search === null) return; // superseded by a newer keystroke
-        const results = await Promise.all(search.results.slice(0, 20).map((r: any) => r.data()));
+        if (!(await loadPagefind()) || mine !== token) return;
+
+        status.textContent = "searching…";
+        const matches = await searchWholeWords(term);
+        if (mine !== token) return; // a newer keystroke already took over
+
+        const results = await Promise.all(matches.slice(0, 20).map((r: any) => r.data()));
+        if (mine !== token) return;
+
         render(results, term);
         const url = new URL(location.href);
         url.searchParams.set("q", term);
         history.replaceState(null, "", url);
     }
 
-    input.addEventListener("input", () => run(input.value));
+    let debounce: number | undefined;
+    input.addEventListener("input", () => {
+        clearTimeout(debounce);
+        debounce = window.setTimeout(() => run(input.value), 220);
+    });
+
+    loadPagefind(); // warm up the index so the first search feels instant
 
     const initial = new URLSearchParams(location.search).get("q");
     if (initial) {

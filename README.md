@@ -44,4 +44,43 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
+---
+
+## Editor de escritura (estilo Medium)
+
+Editor propio para escribir los posts sin tocar Markdown a mano. Vive en `editor/` y se
+monta **solo en `astro dev`**: `astro build` no lo ve, así que nunca llega a Vercel.
+
+### Cómo escribir
+
+1. `npm run dev` y abre <http://localhost:4321/_editor>. Ves todo lo escrito —
+   journal, microfiction y audiofilia juntos, cada uno con su etiqueta de sección.
+2. **Nueva historia**. Escribes el título arriba; con Enter bajas al cuerpo.
+3. Seleccionas texto y sale el menú flotante: negrita, cursiva, enlace, `T` grande (`#`),
+   `T` chica (`##`) y cita. En una línea vacía aparece el **+** a la izquierda: imagen
+   (se copia a `public/images/blog/` y queda enlazada), bloque de código o separador.
+   También funcionan los atajos de Markdown al teclear: `##`, `>`, `-`.
+4. **⌘S** guarda. Arriba dice "Sin guardar" mientras hay cambios y "Guardado" cuando ya
+   está en disco. Nace como borrador: lo ves en el sitio local pero no se publica.
+5. **Publicar…** abre el panel: sección (solo al crear), slug, categoría (solo journal),
+   fecha y la casilla de borrador. Desmarcas "Borrador" y guardas.
+6. `git add` + commit + push manual. Vercel despliega y regenera el índice de búsqueda.
+
+El `id`, el slug y el tiempo de lectura se calculan solos. Para editar algo viejo, clic en
+la lista. Cada colección respeta su propio esquema: journal lleva categoría y tiempo de
+lectura; microfiction y audiofilia no, y admiten títulos de 80 caracteres.
+
+## Búsqueda
+
+`/search` usa [Pagefind](https://pagefind.app): el índice se genera en cada `astro build`
+(ver `integrations/pagefind.mjs`) y se sirve estático, sin backend.
+
+- En local el índice viene del último `npm run build`. Si `/search` dice
+  *"search index not built yet"*, corre un build.
+- Se busca por **palabra completa**: cada término va entrecomillado contra Pagefind, que
+  de otro modo trata la última palabra como prefijo (buscar `Augusto` devolvía todo lo que
+  empieza con `a`). Con varias palabras se cruzan los resultados de cada una.
+- Se indexa lo que esté dentro de `data-pagefind-body`, presente en las tres plantillas de
+  detalle (`blog`, `microfiction`, `audiofilia`).
+
 
