@@ -12,7 +12,7 @@ import Text from "../../components/elements/Text.astro";
 import { type GetStaticPaths } from "astro";
 import { getCollection } from "astro:content";
 export const getStaticPaths = (async ({paginate}) => {
-    const audiofilia = await getCollection("audiofilia");
+    const audiofilia = await getCollection("audiofilia", ({data}) => !data.isDraft);
     const sorted = audiofilia.sort(
         (a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime()
     );

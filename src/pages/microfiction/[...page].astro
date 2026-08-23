@@ -11,7 +11,7 @@ import Pagination from "../../components/elements/Pagination.astro";
 import { type GetStaticPaths } from "astro";
 import { getCollection } from "astro:content";
 export const getStaticPaths = (async ({paginate}) => {
-    const microfiction = await getCollection("microfiction");
+    const microfiction = await getCollection("microfiction", ({data}) => !data.isDraft);
     const sorted = microfiction.sort(
         (a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime()
     );

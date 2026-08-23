@@ -13,7 +13,7 @@ import { type GetStaticPaths } from "astro";
 import { render } from "astro:content";
 import { getCollection } from "astro:content";
 export const getStaticPaths = (async () => {
-    const audiofilia = await getCollection("audiofilia");
+    const audiofilia = await getCollection("audiofilia", ({data}) => !data.isDraft);
     return audiofilia.map((note) => ({
         params: {
             page: note.data.slug

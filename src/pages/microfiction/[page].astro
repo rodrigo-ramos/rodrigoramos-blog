@@ -13,7 +13,7 @@ import { type GetStaticPaths } from "astro";
 import { render } from "astro:content";
 import { getCollection } from "astro:content";
 export const getStaticPaths = (async () => {
-    const microfiction = await getCollection("microfiction");
+    const microfiction = await getCollection("microfiction", ({data}) => !data.isDraft);
     return microfiction.map((story) => ({
         params: {
             page: story.data.slug
