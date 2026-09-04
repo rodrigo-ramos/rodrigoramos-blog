@@ -8,8 +8,8 @@ import { getReadingTime } from "../../utils/readingTime";
 
 // content collection
 import { getCollection } from "astro:content";
-const blog = await getCollection("blog", ({data}) => !data.isDraft);
-const recentArticles = blog
+const journaling = await getCollection("journaling", ({data}) => !data.isDraft);
+const recentArticles = journaling
   .sort((a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime())
   .slice(0, 3)
   .map((article) => ({

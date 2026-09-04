@@ -54,7 +54,8 @@ monta **solo en `astro dev`**: `astro build` no lo ve, así que nunca llega a Ve
 ### Cómo escribir
 
 1. `npm run dev` y abre <http://localhost:4321/_editor>. Ves todo lo escrito —
-   journal, microfiction y audiofilia juntos, cada uno con su etiqueta de sección.
+   writing (journaling, trinos, ensayo), microfiction y audiofilia juntos, cada uno
+   con su etiqueta de sección.
 2. **Nueva historia**. Escribes el título arriba; con Enter bajas al cuerpo.
 3. Seleccionas texto y sale el menú flotante: negrita, cursiva, enlace, `T` grande (`#`),
    `T` chica (`##`) y cita. En una línea vacía aparece el **+** a la izquierda: imagen
@@ -63,13 +64,26 @@ monta **solo en `astro dev`**: `astro build` no lo ve, así que nunca llega a Ve
 4. **⌘S** guarda. Arriba dice "Sin guardar" mientras hay cambios y "Guardado" cuando ya
    está en disco. Nace como borrador, y un borrador no entra al build: no se lista, no
    genera página y no se indexa, ni siquiera si le llega el enlace directo.
-5. **Publicar…** abre el panel: sección (solo al crear), slug, categoría (solo journal),
-   fecha y la casilla de borrador. Desmarcas "Borrador" y guardas.
+5. **Publicar…** abre el panel: menú y submenú, slug (solo al crear), categoría (solo
+   journaling y ensayo), fecha y la casilla de borrador. Desmarcas "Borrador" y guardas.
+   - **Menú** es la entrada del nav (`/writing`, `/microfiction`, `/audiofilia`) y
+     **Submenú** la sección dentro de `/writing`: journaling, trinos o ensayo. El
+     submenú solo aparece en los menús que agrupan más de una colección.
+   - **Cambiar de sección mueve el post:** al guardar, el `.md` se escribe en la colección
+     nueva y se borra el de origen. Si el slug ya existe allá, no se mueve nada.
+   - El **+** junto a la categoría agrega una categoría nueva a `src/data/categories.json`,
+     que es de donde `src/content.config.ts` toma el enum del esquema. Como el config
+     depende de ese archivo, el dev server se reinicia solo al agregarla.
 6. `git add` + commit + push manual. Vercel despliega y regenera el índice de búsqueda.
 
 El `id`, el slug y el tiempo de lectura se calculan solos. Para editar algo viejo, clic en
-la lista. Cada colección respeta su propio esquema: journal lleva categoría y tiempo de
-lectura; microfiction y audiofilia no, y admiten títulos de 80 caracteres.
+la lista. Cada colección respeta su propio esquema: journaling y ensayo llevan categoría
+y tiempo de lectura; trinos, microfiction y audiofilia no, y admiten títulos de 80
+caracteres.
+
+> La **primera** entrada de una sección vacía (hoy trinos y ensayo) no aparece en el sitio
+> hasta reiniciar `astro dev`: el watcher de contenido no vigila colecciones sin archivos.
+> A partir de la segunda, el recargado en caliente funciona normal.
 
 ## Búsqueda
 
@@ -83,6 +97,6 @@ lectura; microfiction y audiofilia no, y admiten títulos de 80 caracteres.
   devolvía todo lo que empieza con `a`). Con varias palabras se cruzan los resultados de
   cada una.
 - Se indexa lo que esté dentro de `data-pagefind-body`, presente en las tres plantillas de
-  detalle (`blog`, `microfiction`, `audiofilia`).
+  detalle (`journaling`, `ensayo`, `trinos`, `microfiction`, `audiofilia`).
 
 

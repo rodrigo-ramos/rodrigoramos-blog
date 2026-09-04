@@ -1,0 +1,46 @@
+---
+// layout
+import Layout from "../../../layout/Layout.astro"
+
+// utils
+import { formatDate } from "../../../utils/formatDate";
+
+// components
+import Section from "../../../components/elements/Section.astro";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { render } from "astro:content";
+import { getCollection } from "astro:content";
+export const getStaticPaths = (async () => {
+    const trinos = await getCollection("trinos", ({data}) => !data.isDraft);
+    return trinos.map((trino) => ({
+        params: {
+            page: trino.data.slug
+        },
+        props: {
+            trino
+        }
+    }))
+}) satisfies GetStaticPaths;
+
+// props
+const { trino } = Astro.props;
+const { Content } = await render(trino);
+const { title, publishedDate } = trino.data;
+---
+
+<Layout
+    title={title}
+    description=""
+    ogImage=""
+>
+    <Section
+        title=`Published On: ${formatDate(publishedDate)}`
+        titleHeading={title}
+    >
+    <div class="markdown-content flex flex-col gap-24" data-pagefind-body>
+        <Content />
+    </div>
+    </Section>
+</Layout>

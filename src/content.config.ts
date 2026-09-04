@@ -1,6 +1,7 @@
 import { glob, file } from 'astro/loaders';
 import { defineCollection } from 'astro/content/config';
 import { z } from 'astro/zod'
+import categories from './data/categories.json'
 
 const projects = defineCollection({
     loader: glob({pattern: "src/content/projects/**/*.md"}),
@@ -24,15 +25,33 @@ const projects = defineCollection({
     })
 });
 
-const blog = defineCollection({
-    loader: glob({pattern: "src/content/blog/**/*.md"}),
+// /writing groups three sections; journaling and ensayo share the long-form schema.
+const longForm = z.object({
+    id: z.number(),
+    slug: z.string().max(50),
+    title: z.string().max(50),
+    publishedDate: z.date(),
+    category: z.enum(categories as [string, ...string[]]),
+    readingTime: z.number().optional(),
+    isDraft: z.boolean()
+});
+
+const journaling = defineCollection({
+    loader: glob({pattern: "src/content/journaling/**/*.md"}),
+    schema: longForm
+})
+
+const ensayo = defineCollection({
+    loader: glob({pattern: "src/content/ensayo/**/*.md"}),
+    schema: longForm
+})
+
+const trinos = defineCollection({
+    loader: glob({pattern: "src/content/trinos/**/*.md"}),
     schema: z.object({
-        id: z.number(),
         slug: z.string().max(50),
-        title: z.string().max(50),
+        title: z.string().max(80),
         publishedDate: z.date(),
-        category: z.enum(["systems", "ai", "productivity", "security", "cloud", "ideas", "reading", "philosophy", "me"]),
-        readingTime: z.number().optional(),
         isDraft: z.boolean()
     })
 })
@@ -84,4 +103,4 @@ const skillsAndTools = defineCollection({
 })
 
 
-export const collections = { projects, blog, microfiction, audiofilia, experience, education, skillsAndTools };
+export const collections = { projects, journaling, ensayo, trinos, microfiction, audiofilia, experience, education, skillsAndTools };

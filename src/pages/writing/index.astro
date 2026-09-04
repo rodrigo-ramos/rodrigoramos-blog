@@ -1,0 +1,43 @@
+---
+// layout
+import Layout from "../../layout/Layout.astro";
+
+// components
+import Section from "../../components/elements/Section.astro";
+import Heading from "../../components/elements/Heading.astro";
+import Text from "../../components/elements/Text.astro";
+
+// content
+import { getCollection } from "astro:content";
+const sections = [
+    { title: "journaling", href: "/writing/journaling", blurb: "Notas, ideas y lo que voy pensando en el camino.", count: (await getCollection("journaling", ({data}) => !data.isDraft)).length },
+    { title: "trinos", href: "/writing/trinos", blurb: "Apuntes breves: una idea por trino.", count: (await getCollection("trinos", ({data}) => !data.isDraft)).length },
+    { title: "ensayo", href: "/writing/ensayo", blurb: "Textos largos: una idea sostenida hasta el final.", count: (await getCollection("ensayo", ({data}) => !data.isDraft)).length },
+];
+---
+
+<Layout
+    title="Writing"
+    description="Journaling, trinos y ensayo."
+    ogImage=""
+>
+    <Section
+        aria-label="Writing"
+        title="Writing"
+        titleHeading="Journaling, trinos y ensayo"
+    >
+        <div class="grid md:grid-cols-3 gap-16">
+            {
+                sections.map((section) => (
+                    <a href={section.href} class="group border-2 border-base-950 hover:border-base-800 hover:drop-shadow-md">
+                        <div class="bg-base-900 group-hover:bg-base-950 p-16 flex flex-col gap-16">
+                            <Heading tagName="h3" tagSize="h3">/{section.title}</Heading>
+                            <Text variant={'sm'} class="text-base-400">{section.blurb}</Text>
+                            <Text variant={'sm'} class="text-base-400">{`${section.count} ${section.count === 1 ? "entrada" : "entradas"}`}</Text>
+                        </div>
+                    </a>
+                ))
+            }
+        </div>
+    </Section>
+</Layout>

@@ -77,14 +77,20 @@ export const prerender = false;
     <div id="panelOverlay" hidden></div>
     <aside id="publishPanel" hidden>
       <h2>Publicación</h2>
-      <label>Sección (nav link donde aparece)
+      <label>Menú
         <select id="fldSection"></select>
+      </label>
+      <label id="lblSubsection">Submenú
+        <select id="fldSubsection"></select>
       </label>
       <label>Slug
         <input id="fldSlug" type="text" maxlength="50" spellcheck="false" />
       </label>
       <label id="lblCategory">Categoría
-        <select id="fldCategory"></select>
+        <span class="row">
+          <select id="fldCategory"></select>
+          <button type="button" id="addCategoryBtn" class="btn-ghost" title="Nueva categoría">+</button>
+        </span>
       </label>
       <label>Fecha de publicación
         <input id="fldDate" type="date" />
@@ -125,7 +131,8 @@ export const prerender = false;
 
       let posts = [];
       let categories = [];
-      let collectionsMeta = {}; // { blog: { nav, full, maxTitle }, ... }
+      let collectionsMeta = {}; // { journaling: { nav, menu, sub, full, maxTitle }, ... }
+      const DEFAULT_COLLECTION = 'journaling';
       let current = null; // { fm, isNew, collection }
       let dirty = false;
       let editor = null;
@@ -278,20 +285,65 @@ export const prerender = false;
         $('lblCategory').hidden = !meta.full;
         $('hintReading').hidden = !meta.full;
         if (meta.full && current.fm.id == null) {
-          current.fm.id = posts.filter((p) => p.collection === 'blog').reduce((m, p) => Math.max(m, p.id ?? 0), 0) + 1;
+          current.fm.id = nextId(collection);
           current.fm.category ??= 'ideas';
         }
         if (current.isNew) syncNewSlug();
       }
 
+      function nextId(collection) {
+        return posts.filter((p) => p.collection === collection).reduce((m, p) => Math.max(m, p.id ?? 0), 0) + 1;
+      }
+
+      // ---------- menu / submenu ----------
+      const menus = () => [...new Set(Object.values(collectionsMeta).map((m) => m.menu))];
+      const collectionsOf = (menu) => Object.keys(collectionsMeta).filter((c) => collectionsMeta[c].menu === menu);
+
+      function renderSections(collection) {
+        $('fldSection').innerHTML = menus().map((m) => `<option value="${m}">/${m}</option>`).join('');
+        $('fldSection').value = collectionsMeta[collection].menu;
+        renderSubsections(collection);
+      }
+
+      // The submenu row only exists for menus that group more than one collection.
+      function renderSubsections(collection) {
+        const cols = collectionsOf($('fldSection').value);
+        $('lblSubsection').hidden = cols.length < 2;
+        $('fldSubsection').innerHTML = cols.map((c) => `<option value="${c}">${collectionsMeta[c].sub ?? c}</option>`).join('');
+        $('fldSubsection').value = cols.includes(collection) ? collection : cols[0];
+        return $('fldSubsection').value;
+      }
+
+      // ---------- categories ----------
+      function renderCategories(selected) {
+        $('fldCategory').innerHTML = categories.map((c) => `<option value="${c}">${c}</option>`).join('');
+        if (selected) $('fldCategory').value = selected;
+      }
+
+      // Writing the list touches src/data/categories.json, which restarts the dev
+      // server (content.config.ts imports it), so flush pending changes first.
+      $('addCategoryBtn').addEventListener('click', async () => {
+        const name = prompt('Nueva categoría (minúsculas y guiones, ej. "escritura")');
+        if (name == null) return;
+        if (dirty && titleInput.value.trim()) await save();
+        try {
+          const data = await api('/categories', { method: 'POST', body: JSON.stringify({ name }) });
+          categories = data.categories;
+          renderCategories(data.added);
+          if (current) { current.fm.category = data.added; setDirty(true); }
+          toast(`Categoría "${data.added}" agregada`);
+        } catch (err) {
+          toast(err.message, true);
+        }
+      });
+
       // ---------- publish panel ----------
       function openPanel() {
         const fm = current.fm;
-        $('fldSection').value = current.collection;
-        $('fldSection').disabled = !current.isNew;
+        renderSections(current.collection);
         $('fldSlug').value = fm.slug;
         $('fldSlug').disabled = !current.isNew;
-        if (fm.category) $('fldCategory').value = fm.category;
+        if (fm.category) renderCategories(fm.category);
         $('fldDate').value = fm.publishedDate;
         $('fldDraft').checked = fm.isDraft;
         $('fldReading').textContent = readingTime(editor.storage.markdown.getMarkdown());
@@ -305,10 +357,16 @@ export const prerender = false;
       $('panelOverlay').addEventListener('click', closePanel);
       $('publishBtn').addEventListener('click', openPanel);
       $('fldSection').addEventListener('change', () => {
-        if (current?.isNew) {
-          applySection($('fldSection').value);
-          $('fldSlug').value = current.fm.slug;
-        }
+        if (!current) return;
+        applySection(renderSubsections(current.collection));
+        $('fldSlug').value = current.fm.slug;
+        setDirty(true);
+      });
+      $('fldSubsection').addEventListener('change', () => {
+        if (!current) return;
+        applySection($('fldSubsection').value);
+        $('fldSlug').value = current.fm.slug;
+        setDirty(true);
       });
       $('panelSaveBtn').addEventListener('click', async () => {
         const fm = current.fm;
@@ -328,14 +386,14 @@ export const prerender = false;
         if (collectionsMeta[current.collection].full) fm.readingTime = readingTime(body);
         if (!fm.title) { toast('Ponle un título primero', true); return false; }
         try {
-          await api('/posts', { method: 'POST', body: JSON.stringify({ collection: current.collection, frontmatter: fm, body }) });
+          await api('/posts', { method: 'POST', body: JSON.stringify({ collection: current.collection, fromCollection: current.saved, frontmatter: fm, body }) });
+          const moved = current.saved != null && current.saved !== current.collection;
           current.fm = fm;
-          if (current.isNew) {
-            current.isNew = false;
-            history.replaceState(null, '', `#/edit/${current.collection}/${fm.slug}`);
-          }
+          current.isNew = false;
+          current.saved = current.collection;
+          history.replaceState(null, '', `#/edit/${current.collection}/${fm.slug}`);
           setDirty(false);
-          toast(`Guardado en ${fm.slug}.md`);
+          toast(moved ? `Movido a ${collectionsMeta[current.collection].nav}` : `Guardado en ${fm.slug}.md`);
           return true;
         } catch (err) {
           toast(`Error al guardar: ${err.message}`, true);
@@ -382,7 +440,8 @@ export const prerender = false;
       }
 
       function showWrite(fm, body, isNew, collection) {
-        current = { fm, isNew, collection };
+        // `saved` is the collection the file currently lives in on disk.
+        current = { fm, isNew, collection, saved: isNew ? null : collection };
         $('listView').hidden = true;
         $('writeView').hidden = false;
         $('saveBtn').hidden = false;
@@ -400,11 +459,11 @@ export const prerender = false;
       async function route() {
         const hash = location.hash || '#/';
         if (hash === '#/new') {
-          const maxId = posts.filter((p) => p.collection === 'blog').reduce((m, p) => Math.max(m, p.id ?? 0), 0);
+          const id = nextId(DEFAULT_COLLECTION);
           showWrite(
-            { id: maxId + 1, slug: `${String(maxId + 1).padStart(2, '0')}-`, title: '',
+            { id, slug: `${String(id).padStart(2, '0')}-`, title: '',
               publishedDate: todayISO(), category: 'ideas', isDraft: true },
-            '', true, 'blog',
+            '', true, DEFAULT_COLLECTION,
           );
         } else if (hash.startsWith('#/edit/')) {
           const [collection, slug] = hash.slice('#/edit/'.length).split('/');
@@ -433,9 +492,7 @@ export const prerender = false;
         posts = data.posts;
         categories = data.categories;
         collectionsMeta = data.collections;
-        $('fldCategory').innerHTML = categories.map((c) => `<option value="${c}">${c}</option>`).join('');
-        $('fldSection').innerHTML = Object.entries(collectionsMeta)
-          .map(([name, m]) => `<option value="${name}">${m.nav}</option>`).join('');
+        renderCategories();
         route();
       })();
     </script>
@@ -547,6 +604,9 @@ export const prerender = false;
         border: 1px solid #d9d9d9; border-radius: 4px; color: var(--ink); background: #fff; font-family: var(--sans);
       }
       #publishPanel input:disabled { background: var(--line); color: var(--gray); }
+      #publishPanel .row { display: flex; gap: 8px; align-items: center; }
+      #publishPanel .row select { flex: 1; }
+      #publishPanel .row .btn-ghost { padding: 6px 13px; font-size: 17px; line-height: 1; }
       #publishPanel .check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--ink); }
       #publishPanel .hint { font-size: 13px; color: var(--gray); }
 

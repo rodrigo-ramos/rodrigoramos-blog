@@ -1,0 +1,57 @@
+---
+// layout
+import Layout from "../../../layout/Layout.astro";
+
+// utils
+import { getReadingTime } from "../../../utils/readingTime";
+
+// components
+import Section from "../../../components/elements/Section.astro";
+import ArticleCard from "../../../components/elements/ArticleCard.astro";
+import Pagination from "../../../components/elements/Pagination.astro";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+export const getStaticPaths = (async ({paginate}) => {
+    const journaling = await getCollection("journaling", ({data}) => !data.isDraft);
+    const withReadingTime = journaling
+        .map((article) => ({
+            ...article,
+            readingTime: getReadingTime(article.body ?? "")
+        }))
+        .sort((a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime());
+    return paginate(withReadingTime, {pageSize: 12})
+}) satisfies GetStaticPaths;
+
+// props
+const { page } = Astro.props;
+---
+
+<Layout
+    title="Journaling"
+    description="Notas, ideas y lo que voy pensando en el camino"
+    ogImage=""
+>
+    <Section
+        aria-label="Journaling"
+        title="Journaling"
+        titleHeading="Notas, ideas y lo que voy pensando en el camino"
+    >
+        <div class="grid md:grid-cols-3 gap-16">
+            {
+                page.data.map((article) => (
+                    <ArticleCard
+                        base="/writing/journaling"
+                        title={article.data.title}
+                        publishedDate={article.data.publishedDate}
+                        slug={article.data.slug}
+                        category={article.data.category}
+                        readingTime={article.readingTime}
+                    />
+                ))
+            }
+        </div>
+        <Pagination prev={page.url.prev} next={page.url.next} />
+    </Section>
+</Layout>

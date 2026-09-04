@@ -8,7 +8,15 @@ const nav = [
     { title: "/home", href: "/" },
     { title: "/projects", href: "/projects" },
     { title: "/about", href: "/about" },
-    { title: "/journal", href: "/blog" },
+    {
+        title: "/writing",
+        href: "/writing",
+        children: [
+            { title: "journaling", href: "/writing/journaling" },
+            { title: "trinos", href: "/writing/trinos" },
+            { title: "ensayo", href: "/writing/ensayo" },
+        ]
+    },
     { title: "/microfiction", href: "/microfiction" },
     { title: "/audiofilia", href: "/audiofilia" },
     { title: "/contact", href: "/contact" },
@@ -16,18 +24,48 @@ const nav = [
 ]
 ---
 
-<nav class="bg-base-900 flex flex-row flex-wrap sticky top-0">
+<nav class="bg-base-900 flex flex-row flex-wrap sticky top-0 z-20">
     {
         nav.map((navLink) => {
             const isActive = navLink.href === "/" ? pathname === "/" : pathname.startsWith(navLink.href);
-        return (
-            <Link
-                variant={'nav'} 
-                href={navLink.href}
-                text={navLink.title}
-                aria-current={isActive ? "page" : undefined}
-                class={isActive ? "bg-base-950 border-t-2 border-base-900" : "" }
-            />
-        )})
+            const activeClass = isActive ? "bg-base-950 border-t-2 border-base-900" : "";
+
+            if (!navLink.children) return (
+                <Link
+                    variant={'nav'}
+                    href={navLink.href}
+                    text={navLink.title}
+                    aria-current={isActive ? "page" : undefined}
+                    class={activeClass}
+                />
+            );
+
+            // Submenu opens on hover and on keyboard focus, no JS involved.
+            return (
+                <div class="relative group flex">
+                    <Link
+                        variant={'nav'}
+                        href={navLink.href}
+                        text={navLink.title}
+                        aria-current={isActive ? "page" : undefined}
+                        aria-haspopup="true"
+                        class:list={["flex items-center", activeClass]}
+                    />
+                    <div class="absolute left-0 top-full z-30 hidden group-hover:flex group-focus-within:flex flex-col min-w-full whitespace-nowrap">
+                        {
+                            navLink.children.map((child) => (
+                                <Link
+                                    variant={'nav'}
+                                    href={child.href}
+                                    text={child.title}
+                                    aria-current={pathname.startsWith(child.href) ? "page" : undefined}
+                                    class={pathname.startsWith(child.href) ? "bg-base-950" : ""}
+                                />
+                            ))
+                        }
+                    </div>
+                </div>
+            );
+        })
     }
 </nav>

@@ -8,13 +8,18 @@ import fs from 'node:fs/promises';
 const IMAGES_DIR = 'public/images/blog';
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,49}$/;
-const CATEGORIES = ['systems', 'ai', 'productivity', 'security', 'cloud', 'ideas', 'reading', 'philosophy', 'me'];
+const CATEGORY_RE = /^[a-z][a-z0-9-]{0,29}$/;
+// Shared with src/content.config.ts, so the schema and the editor never drift.
+const CATEGORIES_FILE = 'src/data/categories.json';
 
-// Collections the editor can write to, mapped to the nav link where posts appear.
+// Collections the editor can write to. `menu` is the top nav entry and `sub` the
+// submenu under it (null when the menu has no submenu), mirroring NavBar.astro.
 const COLLECTIONS = {
-  blog: { dir: 'src/content/blog', nav: '/journal', maxTitle: 50, full: true },
-  microfiction: { dir: 'src/content/microfiction', nav: '/microfiction', maxTitle: 80, full: false },
-  audiofilia: { dir: 'src/content/audiofilia', nav: '/audiofilia', maxTitle: 80, full: false },
+  journaling: { dir: 'src/content/journaling', menu: 'writing', sub: 'journaling', nav: '/writing/journaling', maxTitle: 50, full: true },
+  trinos: { dir: 'src/content/trinos', menu: 'writing', sub: 'trinos', nav: '/writing/trinos', maxTitle: 80, full: false },
+  ensayo: { dir: 'src/content/ensayo', menu: 'writing', sub: 'ensayo', nav: '/writing/ensayo', maxTitle: 50, full: true },
+  microfiction: { dir: 'src/content/microfiction', menu: 'microfiction', sub: null, nav: '/microfiction', maxTitle: 80, full: false },
+  audiofilia: { dir: 'src/content/audiofilia', menu: 'audiofilia', sub: null, nav: '/audiofilia', maxTitle: 80, full: false },
 };
 
 let projectRoot = process.cwd();
@@ -49,7 +54,11 @@ function serializeFrontmatter(fm, collection) {
   return `---\n${lines.join('\n')}\n---\n`;
 }
 
-function validatePost({ collection, frontmatter: fm, body }) {
+async function readCategories() {
+  return JSON.parse(await fs.readFile(path.join(projectRoot, CATEGORIES_FILE), 'utf8'));
+}
+
+function validatePost({ collection, frontmatter: fm, body }, categories) {
   const col = COLLECTIONS[collection];
   if (!col) return 'collection inválida';
   if (!fm || typeof body !== 'string') return 'Payload incompleto';
@@ -59,7 +68,7 @@ function validatePost({ collection, frontmatter: fm, body }) {
   if (typeof fm.isDraft !== 'boolean') return 'isDraft requerido';
   if (col.full) {
     if (!Number.isInteger(fm.id) || fm.id < 1) return 'id inválido';
-    if (!CATEGORIES.includes(fm.category)) return 'category inválida';
+    if (!categories.includes(fm.category)) return 'category inválida';
   }
   return null;
 }
@@ -111,8 +120,8 @@ async function handleApi(req, res) {
       }
     }
     posts.sort((a, b) => (a.publishedDate < b.publishedDate ? 1 : -1));
-    const collections = Object.fromEntries(Object.entries(COLLECTIONS).map(([k, v]) => [k, { nav: v.nav, full: v.full, maxTitle: v.maxTitle }]));
-    return sendJson(res, 200, { posts, categories: CATEGORIES, collections });
+    const collections = Object.fromEntries(Object.entries(COLLECTIONS).map(([k, v]) => [k, { nav: v.nav, menu: v.menu, sub: v.sub, full: v.full, maxTitle: v.maxTitle }]));
+    return sendJson(res, 200, { posts, categories: await readCategories(), collections });
   }
 
   if (req.method === 'GET' && parts[0] === 'posts' && parts.length === 3) {
@@ -125,15 +134,33 @@ async function handleApi(req, res) {
 
   if (req.method === 'POST' && parts[0] === 'posts') {
     const payload = JSON.parse(await readBody(req));
-    const error = validatePost(payload);
+    const error = validatePost(payload, await readCategories());
     if (error) return sendJson(res, 400, { error });
-    const { collection, frontmatter: fm, body } = payload;
+    const { collection, fromCollection, frontmatter: fm, body } = payload;
+    // Moving between collections: write in the target, then drop the original file.
+    const moving = Boolean(fromCollection) && fromCollection !== collection;
+    if (moving && !COLLECTIONS[fromCollection]) return sendJson(res, 400, { error: 'collection de origen inválida' });
     const existing = await findEntry(collection, fm.slug);
+    if (moving && existing) return sendJson(res, 409, { error: `Ya hay un post con el slug "${fm.slug}" en ${collection}` });
     const fileName = existing?.file ?? `${fm.slug}.md`;
     const filePath = path.join(projectRoot, COLLECTIONS[collection].dir, fileName);
     const content = serializeFrontmatter(fm, collection) + '\n' + body.replace(/\s+$/, '') + '\n';
     await fs.writeFile(filePath, content, 'utf8');
-    return sendJson(res, 200, { ok: true, file: fileName });
+    if (moving) {
+      const previous = await findEntry(fromCollection, fm.slug);
+      if (previous) await fs.rm(path.join(projectRoot, COLLECTIONS[fromCollection].dir, previous.file));
+    }
+    return sendJson(res, 200, { ok: true, file: fileName, collection, moved: moving });
+  }
+
+  if (req.method === 'POST' && parts[0] === 'categories') {
+    const value = String(JSON.parse(await readBody(req)).name ?? '').trim().toLowerCase();
+    if (!CATEGORY_RE.test(value)) return sendJson(res, 400, { error: 'Categoría inválida (minúsculas y guiones, máx 30)' });
+    const categories = await readCategories();
+    if (categories.includes(value)) return sendJson(res, 409, { error: `La categoría "${value}" ya existe` });
+    const next = [...categories, value];
+    await fs.writeFile(path.join(projectRoot, CATEGORIES_FILE), `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+    return sendJson(res, 200, { categories: next, added: value });
   }
 
   if (req.method === 'POST' && parts[0] === 'upload') {

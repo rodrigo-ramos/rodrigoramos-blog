@@ -1,0 +1,49 @@
+---
+// layout
+import Layout from "../../../layout/Layout.astro";
+
+// components
+import Section from "../../../components/elements/Section.astro";
+import MicrofictionCard from "../../../components/elements/MicrofictionCard.astro";
+import Pagination from "../../../components/elements/Pagination.astro";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+export const getStaticPaths = (async ({paginate}) => {
+    const trinos = await getCollection("trinos", ({data}) => !data.isDraft);
+    const sorted = trinos.sort(
+        (a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime()
+    );
+    return paginate(sorted, {pageSize: 20})
+}) satisfies GetStaticPaths;
+
+// props
+const { page } = Astro.props;
+---
+
+<Layout
+    title="Trinos"
+    description="Apuntes breves: una idea por trino."
+    ogImage=""
+>
+    <Section
+        aria-label="Trinos"
+        title="Trinos"
+        titleHeading="Una idea por trino"
+    >
+        <div class="grid md:grid-cols-3 gap-16">
+            {
+                page.data.map((trino) => (
+                    <MicrofictionCard
+                        base="/writing/trinos"
+                        title={trino.data.title}
+                        publishedDate={trino.data.publishedDate}
+                        slug={trino.data.slug}
+                    />
+                ))
+            }
+        </div>
+        <Pagination prev={page.url.prev} next={page.url.next} />
+    </Section>
+</Layout>

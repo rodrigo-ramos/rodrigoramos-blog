@@ -1,20 +1,20 @@
 ---
 // layout
-import Layout from "../../layout/Layout.astro"
+import Layout from "../../../layout/Layout.astro"
 
 // utils
-import { formatDate } from "../../utils/formatDate";
+import { formatDate } from "../../../utils/formatDate";
 
 // components
-import Section from "../../components/elements/Section.astro";
+import Section from "../../../components/elements/Section.astro";
 
 // routing
 import { type GetStaticPaths } from "astro";
 import { render } from "astro:content";
 import { getCollection } from "astro:content";
 export const getStaticPaths = (async () => {
-    const blog = await getCollection("blog", ({data}) => !data.isDraft);
-    return blog.map((article) => ({
+    const ensayo = await getCollection("ensayo", ({data}) => !data.isDraft);
+    return ensayo.map((article) => ({
         params: {
             page: article.data.slug
         },

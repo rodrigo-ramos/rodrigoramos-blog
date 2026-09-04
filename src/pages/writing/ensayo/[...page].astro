@@ -1,27 +1,27 @@
 ---
 // layout
-import Layout from "../../layout/Layout.astro";
+import Layout from "../../../layout/Layout.astro";
 
 // utils
-import { getReadingTime } from "../../utils/readingTime";
+import { getReadingTime } from "../../../utils/readingTime";
 
 // components
-import Section from "../../components/elements/Section.astro";
-import ArticleCard from "../../components/elements/ArticleCard.astro";
-import Pagination from "../../components/elements/Pagination.astro";
+import Section from "../../../components/elements/Section.astro";
+import ArticleCard from "../../../components/elements/ArticleCard.astro";
+import Pagination from "../../../components/elements/Pagination.astro";
 
 // routing
 import { type GetStaticPaths } from "astro";
 import { getCollection } from "astro:content";
 export const getStaticPaths = (async ({paginate}) => {
-    const blog = await getCollection("blog", ({data}) => !data.isDraft);
-    const blogWithReadingTime = blog
+    const ensayo = await getCollection("ensayo", ({data}) => !data.isDraft);
+    const withReadingTime = ensayo
         .map((article) => ({
             ...article,
             readingTime: getReadingTime(article.body ?? "")
         }))
         .sort((a, b) => b.data.publishedDate.getTime() - a.data.publishedDate.getTime());
-    return paginate(blogWithReadingTime, {pageSize: 12})
+    return paginate(withReadingTime, {pageSize: 12})
 }) satisfies GetStaticPaths;
 
 // props
@@ -29,19 +29,20 @@ const { page } = Astro.props;
 ---
 
 <Layout
-    title="Blog"
-    description="Latest Articles about a variety of topics."
+    title="Ensayo"
+    description="Textos largos: una idea sostenida hasta el final"
     ogImage=""
 >
     <Section
-        aria-label="Blog"
-        title="Blog"
-        titleHeading="Thoughts, Ideas, Feelings, etc"
+        aria-label="Ensayo"
+        title="Ensayo"
+        titleHeading="Textos largos: una idea sostenida hasta el final"
     >
         <div class="grid md:grid-cols-3 gap-16">
             {
                 page.data.map((article) => (
                     <ArticleCard
+                        base="/writing/ensayo"
                         title={article.data.title}
                         publishedDate={article.data.publishedDate}
                         slug={article.data.slug}
