@@ -48,6 +48,11 @@ const readingTime = getReadingTime(item.entry.body ?? "");
     description={`${novel.data.title} · entrega ${pad(item.number)}`}
     showTitle={false}
     phosphor={novel.data.phosphor}
+    ogType="article"
+    articlePublishedTime={item.entry.data.publishedDate.toISOString()}
+    articleAuthor="El Renacentista"
+    articleSection={novel.data.title}
+    articleTags={novel.data.genre}
 >
     <article
         class="flex flex-col gap-24"
