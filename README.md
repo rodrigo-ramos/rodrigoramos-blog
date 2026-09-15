@@ -1,102 +1,197 @@
-# Decker - Astro & Tailwind Portfolio Template
+# renacentista.dev
 
-A portfolio Astro & Tailwind theme built for developers and engineers. Decker was built with a retro tech design that combines the performance of Astro with the flexibility of Tailwind CSS to deliver a strong online presence.
+Publicación de **novelas web por entregas**. Cada obra es una carpeta; cada entrega, un
+archivo Markdown dentro de ella. El sitio es estático (Astro) y se despliega solo en
+Vercel al empujar a `main`.
 
-- [**Live Demo**](https://decker-gmc.pages.dev) 
-- [**Documentation**](https://jessgaspar.dev/docs/getting-started) 
-- [**Changelog**](https://jessgaspar.dev/changelog/decker) 
-- [**Support**](https://jessgaspar.dev/legal/support) 
-
-## Pages Included
-
-- Home
-- Projects
-- About
-- Blog
-- Blog post
-- Contact
-- 404
-
-## Features
-
-Built with both developers and content editors in mind, Decker ships with a comprehensive set of features:
-
-- **Content Collections:** Structured data management for projects, blog posts, experience, education and skills — making updates quick, painless, and consistent across your entire site
-- **Reusable Components:** A library of modular components that keep your codebase clean, readable, and straightforward to customize for your portfolio
-- **Custom Tailwind Theme:** A bespoke design system built on Tailwind CSS with a clean, professional aesthetic that is easy to adapt to your portfolio's identity
-- **Pagination:** Keeps your projects and blog scalable and navigable as your portfolio grows over time
-- **Sitemap:** Auto-generated and search-engine ready, ensuring all your pages are indexed from day one without any manual configuration
-- **Optimized for SEO:** Built-in best practices including semantic markup, meta tags, and structured data to help your portfolio rank higher and reach more people
-- **Optimized for Accessibility:** Designed to be usable by everyone, with accessible patterns, and semantic HTML throughout
-- **Ongoing Updates:** Regular improvements and continued compatibility with the latest Astro releases so your theme stays modern and well-maintained
-- **Optional CMS with PagesCMS:** Manage your projects, blog posts, resume, and more site content through an intuitive visual interface — no code required
-
-## 🧞 Astro Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+- Producción: <https://renacentista.dev>
+- Local: `http://localhost:4321` · Editor: `http://localhost:4321/_editor`
 
 ---
 
-## Editor de escritura (estilo Medium)
+## Arrancar
 
-Editor propio para escribir los posts sin tocar Markdown a mano. Vive en `editor/` y se
-monta **solo en `astro dev`**: `astro build` no lo ve, así que nunca llega a Vercel.
+```bash
+cd ~/Personal/rodrigoramos-blog
+npm install      # solo la primera vez
+npm run dev      # abre http://localhost:4321
+```
 
-### Cómo escribir
+El editor vive en `/_editor` y **solo existe en `npm run dev`**: `astro build` no lo ve,
+así que nunca llega a producción.
 
-1. `npm run dev` y abre <http://localhost:4321/_editor>. Ves todo lo escrito —
-   writing (journaling, trinos, ensayo), microfiction y audiofilia juntos, cada uno
-   con su etiqueta de sección.
-2. **Nueva historia**. Escribes el título arriba; con Enter bajas al cuerpo.
-3. Seleccionas texto y sale el menú flotante: negrita, cursiva, enlace, `T` grande (`#`),
+---
+
+## Escribir con el editor (lo normal)
+
+### Crear una novela
+
+1. `/_editor` → **Nueva novela**.
+2. Llena la ficha. Debajo del campo *Carpeta y URL* ves la ruta y la dirección que va a
+   tener la obra antes de guardar.
+3. **Guardar novela**. Eso crea en disco:
+
+```
+src/content/novels/<carpeta>/obra.md      ← la ficha
+src/content/novels/<carpeta>/installments/ ← donde irán las entregas
+```
+
+### Escribir una entrega
+
+1. **Nueva entrega**. Escribes el título arriba; con Enter bajas al cuerpo.
+2. Seleccionas texto y sale el menú flotante: negrita, cursiva, enlace, `T` grande (`#`),
    `T` chica (`##`) y cita. En una línea vacía aparece el **+** a la izquierda: imagen
    (se copia a `public/images/blog/` y queda enlazada), bloque de código o separador.
    También funcionan los atajos de Markdown al teclear: `##`, `>`, `-`.
-4. **⌘S** guarda. Arriba dice "Sin guardar" mientras hay cambios y "Guardado" cuando ya
-   está en disco. Nace como borrador, y un borrador no entra al build: no se lista, no
-   genera página y no se indexa, ni siquiera si le llega el enlace directo.
-5. **Publicar…** abre el panel: menú y submenú, slug (solo al crear), categoría (solo
-   journaling y ensayo), fecha y la casilla de borrador. Desmarcas "Borrador" y guardas.
-   - **Menú** es la entrada del nav (`/writing`, `/microfiction`, `/audiofilia`) y
-     **Submenú** la sección dentro de `/writing`: journaling, trinos o ensayo. El
-     submenú solo aparece en los menús que agrupan más de una colección.
-   - **Cambiar de sección mueve el post:** al guardar, el `.md` se escribe en la colección
-     nueva y se borra el de origen. Si el slug ya existe allá, no se mueve nada.
-   - El **+** junto a la categoría agrega una categoría nueva a `src/data/categories.json`,
-     que es de donde `src/content.config.ts` toma el enum del esquema. Como el config
-     depende de ese archivo, el dev server se reinicia solo al agregarla.
-6. `git add` + commit + push manual. Vercel despliega y regenera el índice de búsqueda.
+3. **⌘S** guarda. Arriba dice «Sin guardar» mientras hay cambios y «Guardado» cuando ya
+   está en disco. Nace como **borrador**, y un borrador no entra al build: no se lista, no
+   genera página y no se indexa, ni con el enlace directo.
+4. **Publicar…** abre el panel:
+   - **Novela**: a qué obra pertenece. Cambiarla **mueve** el archivo de carpeta.
+   - **Dirección**: el último tramo de la URL. Solo se puede fijar al crear la entrega.
+   - **Fecha de publicación**: es la que **ordena y numera** la obra. La entrega más
+     antigua es la 01.
+   - **Borrador**: desmárcalo y guarda para que salga en el sitio.
+5. **Cancelar** vuelve a la lista; avisa si hay cambios sin guardar.
 
-El `id`, el slug y el tiempo de lectura se calculan solos. Para editar algo viejo, clic en
-la lista. Cada colección respeta su propio esquema: journaling y ensayo llevan categoría
-y tiempo de lectura; trinos, microfiction y audiofilia no, y admiten títulos de 80
-caracteres.
+El editor recuerda la última novela en la que guardaste y propone esa para la siguiente
+entrega.
 
-> La **primera** entrada de una sección vacía (hoy trinos y ensayo) no aparece en el sitio
-> hasta reiniciar `astro dev`: el watcher de contenido no vigila colecciones sin archivos.
-> A partir de la segunda, el recargado en caliente funciona normal.
+### Terminar o pausar una obra
+
+En la lista, clic en la novela → cambia **Estado** a `completa` o `pausada` → Guardar.
+Al final de la última entrega, el sitio deja de decir «la siguiente aún no existe» y pasa
+a «Aquí termina la obra».
+
+---
+
+## Escribir a mano, sin el editor
+
+### Ficha de la obra — `src/content/novels/<carpeta>/obra.md`
+
+```markdown
+---
+slug: "nave-impuluta"
+title: "La Nave Impoluta"
+tagline: "Una línea que enganche, máx 90 caracteres"
+synopsis: "Dos o tres líneas, máx 400 caracteres."
+status: "en-curso"
+phosphor: "ambar"
+sigil: "//"
+genre: ["cyberpunk"]
+startedDate: 2026-09-15
+isDraft: false
+---
+
+Nota opcional de la obra (se muestra bajo la sinopsis).
+```
+
+| Campo | Valores | Para qué |
+|---|---|---|
+| `status` | `en-curso` · `completa` · `pausada` | Coloca la obra en el catálogo y cambia el pie de la última entrega |
+| `phosphor` | `ambar` · `verde` · `cian` · `magenta` · `violeta` · `rojo` · `blanco` | El color con que se pinta el sitio entero mientras se lee esa obra |
+| `sigil` | 1–4 caracteres (`//`, `[]`, `><`) | La marca que la identifica en listas y cronologías |
+| `isDraft` | `true` / `false` | `true` esconde la obra completa del sitio |
+
+> El **nombre de la carpeta** es lo que manda: es el slug de la obra y el tramo de la URL.
+> Renombrar la carpeta cambia la dirección de todas sus entregas.
+
+### Entrega — `src/content/novels/<carpeta>/installments/<direccion>.md`
+
+```markdown
+---
+slug: "origenes"
+title: "Orígenes"
+publishedDate: 2026-09-15
+isDraft: false
+---
+
+El texto de la entrega, en Markdown.
+```
+
+Eso es todo el frontmatter. **No lleva número ni nombre de la obra**: el número sale del
+orden por `publishedDate` dentro de su carpeta, y la obra, de la carpeta misma. Si alguna
+vez necesitas forzar el orden, agrega `number: 7`.
+
+---
+
+## Publicar en internet
+
+Vercel despliega solo lo que llegue a `main`. Desde el repo local:
+
+```bash
+cd ~/Personal/rodrigoramos-blog
+git status --short                                        # qué hay pendiente
+
+git add src/content/novels/                               # solo lo escrito
+git commit -m "feat: nueva entrega de La Nave Impoluta"
+git push origin main
+```
+
+El despliegue tarda ~1 minuto. Para comprobarlo:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://renacentista.dev/
+curl -s https://renacentista.dev/rss.xml | head -20
+```
+
+> `git add -A` añade **todo** lo modificado, no solo el texto nuevo. Si solo quieres subir
+> lo escrito, usa la ruta como arriba.
+
+### Antes de subir, si tocaste código
+
+```bash
+npm run build     # tiene que terminar en "Complete!" sin errores
+npm run preview   # sirve el resultado real en http://localhost:4321
+```
+
+---
+
+## Cómo funciona el sitio
+
+| Pieza | Dónde | Qué hace |
+|---|---|---|
+| Rutas | `src/pages/` | `/`, `/novelas`, `/novelas/<obra>`, `/novelas/<obra>/<entrega>`, `/acerca`, `/buscar` |
+| Modelo | `src/content.config.ts` | Esquema de `novels` e `installments` |
+| Consultas | `src/utils/novels.ts` | Numeración por fecha, orden, obra de cada entrega |
+| Marcador de lectura | `src/scripts/lectura.ts` | Guarda en el navegador del lector dónde se quedó. Sin cuentas, sin servidor: nada sale de su máquina |
+| RSS | `src/pages/rss.xml.ts` y `.../[novel]/rss.xml.ts` | Feed global y uno por obra |
+| Estilos | `src/styles/global.css` | Paleta de terminal y los fósforos por obra |
+| Editor | `editor/` | Solo en `astro dev` |
+
+Si tocas `editor/integration.mjs`, **reinicia `npm run dev`**: las integraciones de Astro
+se cargan al arrancar y el recargado en caliente no las alcanza.
 
 ## Búsqueda
 
-`/search` usa [Pagefind](https://pagefind.app): el índice se genera en cada `astro build`
+`/buscar` usa [Pagefind](https://pagefind.app): el índice se genera en cada `astro build`
 (ver `integrations/pagefind.mjs`) y se sirve estático, sin backend.
 
-- En local el índice viene del último `npm run build`. Si `/search` dice
-  *"search index not built yet"*, corre un build.
-- Se busca por **palabra completa**: cada término va entrecomillado contra Pagefind, que
-  de otro modo trata la última palabra como prefijo (una palabra que empieza con `a`
-  devolvía todo lo que empieza con `a`). Con varias palabras se cruzan los resultados de
-  cada una.
-- Se indexa lo que esté dentro de `data-pagefind-body`, presente en las tres plantillas de
-  detalle (`journaling`, `ensayo`, `trinos`, `microfiction`, `audiofilia`).
+- En local el índice viene del último `npm run build`. Si `/buscar` dice
+  *«search index not built yet»*, corre un build.
+- Se busca por **palabra completa**: cada término va entrecomillado contra Pagefind.
+- Se indexa lo que esté dentro de `data-pagefind-body`: las fichas de obra y las entregas.
 
+## El blog personal anterior
 
+El sitio fue un blog y portafolio. Nada de aquello se borró:
+
+- Las páginas viven en `src/_archive/pages/` — fuera de `src/pages/`, así que no generan
+  rutas ni salen en el sitemap.
+- Los textos siguen en `src/content/` (`journaling`, `ensayo`, `trinos`, `microfiction`,
+  `audiofilia`, `projects`, `resume`). **No se publican**: escribir ahí no sale en el sitio.
+- Las URLs viejas (`/blog`, `/writing`, `/projects`, `/microfiction`, `/audiofilia`,
+  `/about`, `/contact`, `/search`) redirigen; ver `astro.config.mjs`.
+
+## Comandos de Astro
+
+| Comando | Qué hace |
+| :--- | :--- |
+| `npm install` | Instala dependencias |
+| `npm run dev` | Servidor local en `localhost:4321` (incluye `/_editor`) |
+| `npm run build` | Compila a `./dist/` y genera el índice de búsqueda |
+| `npm run preview` | Sirve `./dist/` para revisarlo antes de subir |
+
+---
+
+Tema base: [Decker](https://jessgaspar.dev/themes), de Jess Gaspar, modificado.
