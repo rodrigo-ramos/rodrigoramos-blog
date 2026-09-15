@@ -1,0 +1,19 @@
+---
+// Oculta por defecto: el script la enciende solo si este navegador ya dejo una
+// marca de lectura. Sin JS, el sitio no promete nada que no pueda cumplir.
+import Text from "../elements/Text.astro";
+---
+
+<a
+    href="/"
+    data-continue-bar
+    data-continue-link
+    hidden
+    class="group border-2 border-base-900 hover:border-phosphor bg-base-900 p-16 flex md:flex-row flex-col md:items-center gap-8 justify-between"
+>
+    <div class="flex flex-col gap-4">
+        <Text variant={'sm'} class="text-base-600">// donde te quedaste</Text>
+        <Text variant={'normal'} class="text-base-100" data-continue-text></Text>
+    </div>
+    <Text variant={'lg'} class="text-phosphor group-hover:text-phosphor whitespace-nowrap">continuar ▸</Text>
+</a>

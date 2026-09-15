@@ -64,3 +64,62 @@
     --breakpoint-lg: 1200px;
     --breakpoint-xl: 1440px;
 }
+/* FOSFOROS POR OBRA
+   Cada novela se pinta con el fosforo de un monitor distinto. El chrome del
+   sitio hereda el de la obra que se esta leyendo: es lo que la vuelve
+   reconocible sin abandonar la terminal. Fuera de capas a proposito, para que
+   gane siempre a las utilidades de Tailwind. */
+:root,
+[data-phosphor="ambar"] {
+    --phosphor: oklch(0.810 0.175 70);
+    --phosphor-bright: oklch(0.885 0.135 75);
+    --phosphor-dim: oklch(0.440 0.140 50);
+}
+
+[data-phosphor="verde"] {
+    --phosphor: oklch(0.830 0.200 145);
+    --phosphor-bright: oklch(0.920 0.160 145);
+    --phosphor-dim: oklch(0.450 0.130 150);
+}
+
+[data-phosphor="cian"] {
+    --phosphor: oklch(0.820 0.130 205);
+    --phosphor-bright: oklch(0.910 0.110 205);
+    --phosphor-dim: oklch(0.450 0.090 210);
+}
+
+[data-phosphor="magenta"] {
+    --phosphor: oklch(0.760 0.180 340);
+    --phosphor-bright: oklch(0.860 0.150 340);
+    --phosphor-dim: oklch(0.430 0.130 340);
+}
+
+[data-phosphor="violeta"] {
+    --phosphor: oklch(0.740 0.170 300);
+    --phosphor-bright: oklch(0.850 0.140 300);
+    --phosphor-dim: oklch(0.420 0.120 300);
+}
+
+[data-phosphor="rojo"] {
+    --phosphor: oklch(0.680 0.200 25);
+    --phosphor-bright: oklch(0.790 0.170 25);
+    --phosphor-dim: oklch(0.400 0.140 25);
+}
+
+[data-phosphor="blanco"] {
+    --phosphor: oklch(0.900 0.015 250);
+    --phosphor-bright: oklch(0.970 0.010 250);
+    --phosphor-dim: oklch(0.520 0.015 250);
+}
+
+.text-phosphor { color: var(--phosphor); }
+.text-phosphor-bright { color: var(--phosphor-bright); }
+.text-phosphor-dim { color: var(--phosphor-dim); }
+.border-phosphor { border-color: var(--phosphor); }
+.bg-phosphor { background-color: var(--phosphor); }
+.bg-phosphor-soft { background-color: color-mix(in oklch, var(--phosphor) 14%, transparent); }
+.glow-phosphor { filter: drop-shadow(0 0 5px var(--phosphor)); }
+.hover\:border-phosphor:hover { border-color: var(--phosphor); }
+.hover\:text-phosphor:hover { color: var(--phosphor); }
+.group:hover .group-hover\:text-phosphor { color: var(--phosphor); }
+.group:hover .group-hover\:border-phosphor { border-color: var(--phosphor); }

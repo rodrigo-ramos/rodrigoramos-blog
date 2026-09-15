@@ -29,3 +29,5 @@ pnpm-debug.log*
 
 .venv/
 __pycache__/
+astro-dev.log
+.dev.log

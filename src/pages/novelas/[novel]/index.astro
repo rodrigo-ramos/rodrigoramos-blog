@@ -1,0 +1,96 @@
+---
+// layout
+import Layout from "../../../layout/Layout.astro";
+
+// components
+import Section from "../../../components/elements/Section.astro";
+import Text from "../../../components/elements/Text.astro";
+import Heading from "../../../components/elements/Heading.astro";
+import StatusChip from "../../../components/elements/StatusChip.astro";
+
+// utils
+import { formatDate } from "../../../utils/formatDate";
+import { getNovels, getInstallmentsOf, slugOf, pad } from "../../../utils/novels";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { render } from "astro:content";
+export const getStaticPaths = (async () => {
+    const novels = await getNovels();
+    return Promise.all(
+        novels.map(async (novel) => {
+            const slug = slugOf(novel);
+            return {
+                params: { novel: slug },
+                props: { novel, slug, installments: await getInstallmentsOf(slug) }
+            };
+        })
+    );
+}) satisfies GetStaticPaths;
+
+// props
+const { novel, slug, installments } = Astro.props;
+const { Content } = await render(novel);
+const first = installments.at(0);
+---
+
+<Layout
+    title={novel.data.title}
+    description={novel.data.synopsis}
+    showTitle={false}
+    phosphor={novel.data.phosphor}
+>
+    <section class="flex flex-col gap-24">
+        <div class="flex flex-row flex-wrap gap-16 justify-between items-center">
+            <Text variant={'normal'} class="text-phosphor-dim">{novel.data.sigil} novela por entregas</Text>
+            <StatusChip status={novel.data.status} />
+        </div>
+
+        <Heading tagName="h1" tagSize="h1" class="text-phosphor glow-phosphor" data-pagefind-meta="title">{novel.data.title}</Heading>
+        <Text variant={'lg'} class="text-base-300">{novel.data.tagline}</Text>
+        <Text variant={'normal'} class="text-base-400">{novel.data.synopsis}</Text>
+
+        <div class="markdown-content text-base-500" data-pagefind-body>
+            <Content />
+        </div>
+
+        <div class="flex flex-row flex-wrap gap-16 border-t-2 border-base-900 pt-16">
+            <Text variant={'sm'} class="text-base-500">{pad(installments.length)} entregas</Text>
+            <Text variant={'sm'} class="text-base-500">desde {formatDate(novel.data.startedDate)}</Text>
+            {novel.data.genre.map((tag: string) => (
+                <Text variant={'sm'} class="text-base-600">#{tag}</Text>
+            ))}
+            <a href={`/novelas/${slug}/rss.xml`} class="font-mono text-14 text-base-500 hover:text-phosphor underline">rss</a>
+        </div>
+
+        {first && (
+            <a href={`/novelas/${slug}/${first.entry.data.slug}`} class="border-2 border-phosphor text-phosphor hover:bg-phosphor-soft px-24 py-16 font-pixels text-20 text-center">
+                empezar por la entrega 01
+            </a>
+        )}
+    </section>
+
+    <Section aria-label="Índice" title="índice" titleHeading="Todas las entregas">
+        <ol class="flex flex-col gap-8">
+            {installments.map((item) => (
+                <li>
+                    <a
+                        href={`/novelas/${slug}/${item.entry.data.slug}`}
+                        data-index-item
+                        data-novel={slug}
+                        data-slug={item.entry.data.slug}
+                        class="group border-2 border-base-950 hover:border-phosphor bg-base-900 p-16 flex md:flex-row flex-col md:items-center gap-8 justify-between"
+                    >
+                        <div class="flex flex-row gap-16 items-baseline">
+                            <span data-index-mark class="font-mono text-14 text-base-800 w-16">·</span>
+                            <Text variant={'sm'} class="text-phosphor">{pad(item.number)}</Text>
+                            <Heading tagName="h3" tagSize="h4" class="group-hover:text-phosphor normal-case">{item.entry.data.title}</Heading>
+                        </div>
+                        <Text variant={'sm'} class="text-base-500 whitespace-nowrap">{formatDate(item.entry.data.publishedDate)}</Text>
+                    </a>
+                </li>
+            ))}
+        </ol>
+        <Text variant={'sm'} class="text-base-700">✓ leída · ▸ donde te quedaste · se guarda solo en este navegador</Text>
+    </Section>
+</Layout>

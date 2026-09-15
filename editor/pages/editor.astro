@@ -26,20 +26,70 @@ export const prerender = false;
         <div class="topbar-right">
           <span id="navChip" class="nav-chip" hidden></span>
           <span id="status"></span>
+          <button id="cancelBtn" class="btn-ghost" hidden>Cancelar</button>
           <button id="saveBtn" class="btn-ghost" hidden>Guardar</button>
           <button id="publishBtn" class="btn-green" hidden>Publicar…</button>
-          <a href="#/new" id="newBtn" class="btn-green">Nueva historia</a>
+          <a href="#/novela-nueva" id="newNovelBtn" class="btn-ghost">Nueva novela</a>
+          <a href="#/new" id="newBtn" class="btn-green">Nueva entrega</a>
         </div>
       </div>
     </header>
 
     <main id="listView">
-      <h1 class="list-title">Historias</h1>
+      <h1 class="list-title">Novelas</h1>
+      <div id="novelList"></div>
+      <h1 class="list-title spaced">Entregas</h1>
       <div id="storyList"></div>
     </main>
 
+    <main id="novelView" hidden>
+      <h1 class="list-title" id="novelHeading">Nueva novela</h1>
+      <form id="novelForm" class="novel-form" autocomplete="off">
+        <label>Título
+          <input id="nvTitle" type="text" maxlength="60" required />
+        </label>
+        <label>Carpeta y URL
+          <input id="nvSlug" type="text" maxlength="50" spellcheck="false" required />
+          <span class="hint" id="nvPath"></span>
+        </label>
+        <label>Línea de gancho
+          <input id="nvTagline" type="text" maxlength="90" required />
+        </label>
+        <label>Sinopsis
+          <textarea id="nvSynopsis" rows="4" maxlength="400" required></textarea>
+        </label>
+        <div class="row3">
+          <label>Estado
+            <select id="nvStatus"></select>
+          </label>
+          <label>Fósforo
+            <select id="nvPhosphor"></select>
+          </label>
+          <label>Sigilo
+            <input id="nvSigil" type="text" maxlength="4" required />
+          </label>
+        </div>
+        <div class="row2">
+          <label>Géneros (separados por coma)
+            <input id="nvGenre" type="text" />
+          </label>
+          <label>Primera entrega
+            <input id="nvDate" type="date" />
+          </label>
+        </div>
+        <label>Nota de la obra (opcional)
+          <textarea id="nvBody" rows="3"></textarea>
+        </label>
+        <label class="check">
+          <input id="nvDraft" type="checkbox" />
+          <span>Borrador (la obra no aparece en el sitio)</span>
+        </label>
+        <button type="submit" class="btn-green wide">Guardar novela</button>
+      </form>
+    </main>
+
     <main id="writeView" hidden>
-      <textarea id="titleInput" placeholder="Título" rows="1" maxlength="50"></textarea>
+      <textarea id="titleInput" placeholder="Título de la entrega" rows="1" maxlength="80"></textarea>
       <div id="editorMount"></div>
     </main>
 
@@ -76,30 +126,23 @@ export const prerender = false;
 
     <div id="panelOverlay" hidden></div>
     <aside id="publishPanel" hidden>
-      <h2>Publicación</h2>
-      <label>Menú
-        <select id="fldSection"></select>
+      <h2>Publicar entrega</h2>
+      <label>Novela
+        <select id="fldNovel"></select>
       </label>
-      <label id="lblSubsection">Submenú
-        <select id="fldSubsection"></select>
-      </label>
-      <label>Slug
+      <label>Dirección
         <input id="fldSlug" type="text" maxlength="50" spellcheck="false" />
-      </label>
-      <label id="lblCategory">Categoría
-        <span class="row">
-          <select id="fldCategory"></select>
-          <button type="button" id="addCategoryBtn" class="btn-ghost" title="Nueva categoría">+</button>
-        </span>
+        <span class="hint" id="hintUrl"></span>
       </label>
       <label>Fecha de publicación
         <input id="fldDate" type="date" />
+        <span class="hint">Ordena la obra: la entrega se numera por esta fecha.</span>
       </label>
       <label class="check">
         <input id="fldDraft" type="checkbox" />
         <span>Borrador (no se publica en el sitio)</span>
       </label>
-      <p class="hint" id="hintReading">Tiempo de lectura: <span id="fldReading">–</span> min (automático)</p>
+      <p class="hint" id="hintReading">Tiempo de lectura: <span id="fldReading">–</span> min</p>
       <button id="panelSaveBtn" class="btn-green wide">Guardar</button>
     </aside>
 
@@ -130,9 +173,10 @@ export const prerender = false;
         });
 
       let posts = [];
-      let categories = [];
-      let collectionsMeta = {}; // { journaling: { nav, menu, sub, full, maxTitle }, ... }
-      const DEFAULT_COLLECTION = 'journaling';
+      let novels = [];
+      let novelOptions = { status: [], phosphors: [] };
+      let collectionsMeta = {}; // { <novela>: { nav, menu, sub, full, maxTitle }, ... }
+      let DEFAULT_COLLECTION = '';
       let current = null; // { fm, isNew, collection }
       let dirty = false;
       let editor = null;
@@ -177,7 +221,7 @@ export const prerender = false;
             StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
             Link.configure({ openOnClick: false }),
             Image,
-            Placeholder.configure({ placeholder: 'Cuenta tu historia…' }),
+            Placeholder.configure({ placeholder: 'Escribe la entrega…' }),
             BubbleMenu.configure({ element: bubbleEl, tippyOptions: { duration: 120 } }),
             FloatingMenu.configure({ element: floatingEl, tippyOptions: { duration: 120, placement: 'left' } }),
             Markdown.configure({ html: true, breaks: false }),
@@ -271,79 +315,39 @@ export const prerender = false;
       });
 
       function syncNewSlug() {
-        const isFull = collectionsMeta[current.collection].full;
-        const prefix = isFull ? `${String(current.fm.id).padStart(2, '0')}-` : '';
-        current.fm.slug = `${prefix}${kebab(titleInput.value)}`.slice(0, 50).replace(/-+$/, '');
+        current.fm.slug = kebab(titleInput.value).slice(0, 50).replace(/-+$/, '');
         $('fldSlug').value = current.fm.slug;
+        syncUrlHint();
       }
 
+      // Una entrega pertenece a una obra y nada mas: el destino es la novela.
       function applySection(collection) {
         current.collection = collection;
         const meta = collectionsMeta[collection];
         $('navChip').textContent = meta.nav;
         titleInput.maxLength = meta.maxTitle;
-        $('lblCategory').hidden = !meta.full;
-        $('hintReading').hidden = !meta.full;
-        if (meta.full && current.fm.id == null) {
-          current.fm.id = nextId(collection);
-          current.fm.category ??= 'ideas';
-        }
         if (current.isNew) syncNewSlug();
+        syncUrlHint();
       }
 
-      function nextId(collection) {
-        return posts.filter((p) => p.collection === collection).reduce((m, p) => Math.max(m, p.id ?? 0), 0) + 1;
+      function syncUrlHint() {
+        const slug = $('fldSlug').value || '<dirección>';
+        $('hintUrl').textContent = `renacentista.dev/novelas/${current?.collection ?? ''}/${slug}`;
       }
 
-      // ---------- menu / submenu ----------
-      const menus = () => [...new Set(Object.values(collectionsMeta).map((m) => m.menu))];
-      const collectionsOf = (menu) => Object.keys(collectionsMeta).filter((c) => collectionsMeta[c].menu === menu);
-
-      function renderSections(collection) {
-        $('fldSection').innerHTML = menus().map((m) => `<option value="${m}">/${m}</option>`).join('');
-        $('fldSection').value = collectionsMeta[collection].menu;
-        renderSubsections(collection);
+      function renderNovels(collection) {
+        $('fldNovel').innerHTML = Object.keys(collectionsMeta)
+          .map((c) => `<option value="${c}">${collectionsMeta[c].sub ?? c}</option>`).join('');
+        $('fldNovel').value = collection;
       }
-
-      // The submenu row only exists for menus that group more than one collection.
-      function renderSubsections(collection) {
-        const cols = collectionsOf($('fldSection').value);
-        $('lblSubsection').hidden = cols.length < 2;
-        $('fldSubsection').innerHTML = cols.map((c) => `<option value="${c}">${collectionsMeta[c].sub ?? c}</option>`).join('');
-        $('fldSubsection').value = cols.includes(collection) ? collection : cols[0];
-        return $('fldSubsection').value;
-      }
-
-      // ---------- categories ----------
-      function renderCategories(selected) {
-        $('fldCategory').innerHTML = categories.map((c) => `<option value="${c}">${c}</option>`).join('');
-        if (selected) $('fldCategory').value = selected;
-      }
-
-      // Writing the list touches src/data/categories.json, which restarts the dev
-      // server (content.config.ts imports it), so flush pending changes first.
-      $('addCategoryBtn').addEventListener('click', async () => {
-        const name = prompt('Nueva categoría (minúsculas y guiones, ej. "escritura")');
-        if (name == null) return;
-        if (dirty && titleInput.value.trim()) await save();
-        try {
-          const data = await api('/categories', { method: 'POST', body: JSON.stringify({ name }) });
-          categories = data.categories;
-          renderCategories(data.added);
-          if (current) { current.fm.category = data.added; setDirty(true); }
-          toast(`Categoría "${data.added}" agregada`);
-        } catch (err) {
-          toast(err.message, true);
-        }
-      });
 
       // ---------- publish panel ----------
       function openPanel() {
         const fm = current.fm;
-        renderSections(current.collection);
+        renderNovels(current.collection);
         $('fldSlug').value = fm.slug;
         $('fldSlug').disabled = !current.isNew;
-        if (fm.category) renderCategories(fm.category);
+        syncUrlHint();
         $('fldDate').value = fm.publishedDate;
         $('fldDraft').checked = fm.isDraft;
         $('fldReading').textContent = readingTime(editor.storage.markdown.getMarkdown());
@@ -356,22 +360,16 @@ export const prerender = false;
       }
       $('panelOverlay').addEventListener('click', closePanel);
       $('publishBtn').addEventListener('click', openPanel);
-      $('fldSection').addEventListener('change', () => {
+      $('fldNovel').addEventListener('change', () => {
         if (!current) return;
-        applySection(renderSubsections(current.collection));
+        applySection($('fldNovel').value);
         $('fldSlug').value = current.fm.slug;
         setDirty(true);
       });
-      $('fldSubsection').addEventListener('change', () => {
-        if (!current) return;
-        applySection($('fldSubsection').value);
-        $('fldSlug').value = current.fm.slug;
-        setDirty(true);
-      });
+      $('fldSlug').addEventListener('input', syncUrlHint);
       $('panelSaveBtn').addEventListener('click', async () => {
         const fm = current.fm;
         if (current.isNew) fm.slug = $('fldSlug').value.trim();
-        if (collectionsMeta[current.collection].full) fm.category = $('fldCategory').value;
         fm.publishedDate = $('fldDate').value;
         fm.isDraft = $('fldDraft').checked;
         setDirty(true);
@@ -379,11 +377,14 @@ export const prerender = false;
       });
 
       // ---------- save ----------
+      function rememberNovel(collection) {
+        try { localStorage.setItem('editor:last-novel', collection); } catch {}
+      }
+
       async function save() {
         if (!current || !editor) return false;
         const body = editor.storage.markdown.getMarkdown();
         const fm = { ...current.fm, title: titleInput.value.trim() };
-        if (collectionsMeta[current.collection].full) fm.readingTime = readingTime(body);
         if (!fm.title) { toast('Ponle un título primero', true); return false; }
         try {
           await api('/posts', { method: 'POST', body: JSON.stringify({ collection: current.collection, fromCollection: current.saved, frontmatter: fm, body }) });
@@ -391,6 +392,7 @@ export const prerender = false;
           current.fm = fm;
           current.isNew = false;
           current.saved = current.collection;
+          rememberNovel(current.collection);
           history.replaceState(null, '', `#/edit/${current.collection}/${fm.slug}`);
           setDirty(false);
           toast(moved ? `Movido a ${collectionsMeta[current.collection].nav}` : `Guardado en ${fm.slug}.md`);
@@ -424,19 +426,31 @@ export const prerender = false;
         floatingEl.remove();
         $('saveBtn').hidden = true;
         $('publishBtn').hidden = true;
+        $('cancelBtn').hidden = true;
         $('navChip').hidden = true;
         $('newBtn').hidden = false;
+        $('newNovelBtn').hidden = false;
+        $('novelView').hidden = true;
         $('listView').hidden = false;
+        $('novelList').innerHTML = novels.map((n) => `
+          <a class="story" href="#/novela/${n.slug}">
+            <h2>${n.frontmatter.title}</h2>
+            <p class="meta">
+              <span class="navtag">/novelas/${n.slug}</span>
+              ${n.frontmatter.status} · ${n.installments} ${n.installments === 1 ? 'entrega' : 'entregas'} · fósforo ${n.frontmatter.phosphor}
+              ${n.frontmatter.isDraft ? '<span class="pill">Borrador</span>' : ''}
+            </p>
+          </a>`).join('') || '<p class="meta">Sin novelas todavía. Empieza por «Nueva novela».</p>';
         const rows = posts.map((p) => `
           <a class="story" href="#/edit/${p.collection}/${p.slug}">
             <h2>${p.title}</h2>
             <p class="meta">
               <span class="navtag">${p.nav}</span>
-              ${fmtDate(p.publishedDate)}${p.category ? ` · ${p.category}` : ''}${p.readingTime ? ` · ${p.readingTime} min` : ''}
+              ${fmtDate(p.publishedDate)}
               ${p.isDraft ? '<span class="pill">Borrador</span>' : ''}
             </p>
           </a>`);
-        $('storyList').innerHTML = rows.join('') || '<p class="meta">Sin historias todavía.</p>';
+        $('storyList').innerHTML = rows.join('') || '<p class="meta">Sin entregas todavía.</p>';
       }
 
       function showWrite(fm, body, isNew, collection) {
@@ -446,8 +460,11 @@ export const prerender = false;
         $('writeView').hidden = false;
         $('saveBtn').hidden = false;
         $('publishBtn').hidden = false;
+        $('cancelBtn').hidden = false;
         $('navChip').hidden = false;
         $('newBtn').hidden = true;
+        $('newNovelBtn').hidden = true;
+        $('novelView').hidden = true;
         applySection(collection);
         titleInput.value = fm.title;
         growTitle();
@@ -456,15 +473,144 @@ export const prerender = false;
         if (isNew) titleInput.focus();
       }
 
+      // ---------- salir sin guardar ----------
+      // Vale tanto para una entrega como para la ficha de una obra: si no se
+      // escribio nada, no pregunta.
+      function canLeave() {
+        return !dirty || confirm('Hay cambios sin guardar. ¿Salir y perderlos?');
+      }
+
+      $('cancelBtn').addEventListener('click', () => {
+        if (!canLeave()) return;
+        setDirty(false);
+        location.hash = '#/';
+      });
+
+      $('brand').addEventListener('click', (e) => {
+        if (canLeave()) { setDirty(false); return; }
+        e.preventDefault();
+      });
+
+      // ---------- novelas ----------
+      function showNovel(novel) {
+        current = null;
+        editor?.destroy();
+        editor = null;
+        setDirty(false);
+        $('listView').hidden = true;
+        $('writeView').hidden = true;
+        $('saveBtn').hidden = true;
+        $('publishBtn').hidden = true;
+        $('navChip').hidden = true;
+        $('newBtn').hidden = true;
+        $('newNovelBtn').hidden = true;
+        $('cancelBtn').hidden = false;
+        $('novelView').hidden = false;
+
+        const fm = novel?.frontmatter ?? {};
+        const isNew = !novel;
+        $('novelHeading').textContent = isNew ? 'Nueva novela' : fm.title;
+        $('nvTitle').value = fm.title ?? '';
+        $('nvSlug').value = novel?.slug ?? '';
+        $('nvSlug').readOnly = !isNew;
+        $('nvSlug').dataset.touched = isNew ? '' : '1';
+        $('nvTagline').value = fm.tagline ?? '';
+        $('nvSynopsis').value = fm.synopsis ?? '';
+        $('nvSigil').value = fm.sigil ?? '//';
+        $('nvGenre').value = (fm.genre ?? []).join(', ');
+        $('nvDate').value = fm.startedDate ?? todayISO();
+        $('nvDraft').checked = Boolean(fm.isDraft);
+        $('nvBody').value = novel?.body?.trim() ?? '';
+        $('nvStatus').innerHTML = novelOptions.status
+          .map((v) => `<option value="${v}"${v === (fm.status ?? 'en-curso') ? ' selected' : ''}>${v}</option>`).join('');
+        $('nvPhosphor').innerHTML = novelOptions.phosphors
+          .map((v) => `<option value="${v}"${v === (fm.phosphor ?? 'ambar') ? ' selected' : ''}>${v}</option>`).join('');
+        syncNovelPath();
+        if (isNew) $('nvTitle').focus();
+      }
+
+      function syncNovelPath() {
+        const slug = $('nvSlug').value || '<carpeta>';
+        $('nvPath').textContent = `src/content/novels/${slug}/  ·  renacentista.dev/novelas/${slug}`;
+      }
+
+      $('nvTitle').addEventListener('input', () => {
+        if ($('nvSlug').dataset.touched !== '1') {
+          $('nvSlug').value = kebab($('nvTitle').value).slice(0, 50).replace(/-+$/, '');
+          syncNovelPath();
+        }
+      });
+      $('nvSlug').addEventListener('input', () => {
+        $('nvSlug').dataset.touched = '1';
+        syncNovelPath();
+      });
+
+      $('novelForm').addEventListener('input', () => setDirty(true));
+
+      $('novelForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          slug: $('nvSlug').value.trim(),
+          frontmatter: {
+            title: $('nvTitle').value.trim(),
+            tagline: $('nvTagline').value.trim(),
+            synopsis: $('nvSynopsis').value.trim(),
+            status: $('nvStatus').value,
+            phosphor: $('nvPhosphor').value,
+            sigil: $('nvSigil').value.trim(),
+            genre: $('nvGenre').value.split(',').map((g) => g.trim()).filter(Boolean),
+            startedDate: $('nvDate').value,
+            isDraft: $('nvDraft').checked,
+          },
+          body: $('nvBody').value,
+        };
+        try {
+          const { created } = await api('/novels', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          await reload();
+          setDirty(false);
+          toast(created ? `Novela creada en src/content/novels/${payload.slug}/` : 'Ficha guardada');
+          location.hash = '#/';
+        } catch (err) {
+          toast(err.message, true);
+        }
+      });
+
+      // El listado y los selectores de entrega dependen de las obras que existan.
+      async function reload() {
+        const [data, novelData] = await Promise.all([api('/posts'), api('/novels')]);
+        posts = data.posts;
+        collectionsMeta = data.collections;
+        // Se escribe una novela durante meses: la siguiente entrega casi
+        // siempre va a la misma obra que la anterior.
+        const last = localStorage.getItem('editor:last-novel');
+        DEFAULT_COLLECTION = (last && collectionsMeta[last]) ? last : (Object.keys(collectionsMeta)[0] ?? '');
+        novels = novelData.novels;
+        novelOptions = { status: novelData.status, phosphors: novelData.phosphors };
+      }
+
       async function route() {
         const hash = location.hash || '#/';
         if (hash === '#/new') {
-          const id = nextId(DEFAULT_COLLECTION);
+          if (!DEFAULT_COLLECTION) {
+            toast('Primero crea una novela', true);
+            location.hash = '#/novela-nueva';
+            return;
+          }
           showWrite(
-            { id, slug: `${String(id).padStart(2, '0')}-`, title: '',
-              publishedDate: todayISO(), category: 'ideas', isDraft: true },
+            { slug: '', title: '', publishedDate: todayISO(), isDraft: true },
             '', true, DEFAULT_COLLECTION,
           );
+        } else if (hash === '#/novela-nueva') {
+          showNovel(null);
+        } else if (hash.startsWith('#/novela/')) {
+          const slug = hash.slice('#/novela/'.length);
+          const novel = novels.find((n) => n.slug === slug);
+          if (!novel) { toast('Novela no encontrada', true); location.hash = '#/'; return; }
+          showNovel(novel);
         } else if (hash.startsWith('#/edit/')) {
           const [collection, slug] = hash.slice('#/edit/'.length).split('/');
           try {
@@ -475,8 +621,7 @@ export const prerender = false;
             location.hash = '#/';
           }
         } else {
-          const data = await api('/posts');
-          posts = data.posts;
+          await reload();
           showList();
         }
       }
@@ -488,11 +633,9 @@ export const prerender = false;
       window.addEventListener('unhandledrejection', (e) => toast(e.reason?.message ?? String(e.reason), true));
 
       (async () => {
-        const data = await api('/posts');
-        posts = data.posts;
-        categories = data.categories;
-        collectionsMeta = data.collections;
-        renderCategories();
+        // La obra por defecto es la primera que exista: el editor no conoce
+        // ninguna novela de antemano.
+        await reload();
         route();
       })();
     </script>
@@ -598,17 +741,31 @@ export const prerender = false;
         box-shadow: -4px 0 24px rgba(0,0,0,.12); z-index: 31; padding: 40px 32px;
       }
       #publishPanel h2 { font-family: var(--serif); font-size: 24px; margin-bottom: 28px; }
+      /* ---- ficha de obra ---- */
+      #novelView { max-width: 728px; margin: 0 auto; padding: 48px 24px 96px; }
+      .list-title.spaced { margin-top: 56px; }
+      .novel-form label { display: block; font-size: 13px; color: var(--gray); margin-bottom: 18px; }
+      .novel-form input[type=text], .novel-form input[type=date], .novel-form select, .novel-form textarea {
+        display: block; width: 100%; margin-top: 6px; padding: 8px 10px; font-size: 14px;
+        border: 1px solid #d9d9d9; border-radius: 4px; color: var(--ink); background: #fff; font-family: var(--sans);
+      }
+      .novel-form textarea { resize: vertical; line-height: 1.5; }
+      .novel-form .row2, .novel-form .row3 { display: grid; gap: 16px; }
+      .novel-form .row2 { grid-template-columns: 2fr 1fr; }
+      .novel-form .row3 { grid-template-columns: 1fr 1fr 1fr; }
+      .novel-form .check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--ink); }
+      .novel-form .check input { width: auto; margin: 0; }
+      .novel-form .hint { display: block; margin-top: 6px; font-size: 12px; color: var(--gray); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
       #publishPanel label { display: block; font-size: 13px; color: var(--gray); margin-bottom: 18px; }
       #publishPanel input[type="text"], #publishPanel input[type="date"], #publishPanel select {
         display: block; width: 100%; margin-top: 6px; padding: 8px 10px; font-size: 14px;
         border: 1px solid #d9d9d9; border-radius: 4px; color: var(--ink); background: #fff; font-family: var(--sans);
       }
       #publishPanel input:disabled { background: var(--line); color: var(--gray); }
-      #publishPanel .row { display: flex; gap: 8px; align-items: center; }
-      #publishPanel .row select { flex: 1; }
-      #publishPanel .row .btn-ghost { padding: 6px 13px; font-size: 17px; line-height: 1; }
       #publishPanel .check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--ink); }
-      #publishPanel .hint { font-size: 13px; color: var(--gray); }
+      #publishPanel .hint { display: block; margin-top: 6px; font-size: 12px; color: var(--gray); }
+      #publishPanel #hintUrl { font-family: 'JetBrains Mono', ui-monospace, monospace; word-break: break-all; }
 
       /* ---- toast ---- */
       #toast {

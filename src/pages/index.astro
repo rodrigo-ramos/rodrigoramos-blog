@@ -3,17 +3,60 @@
 import Layout from "../layout/Layout.astro"
 
 // components
-import Intro from "../components/sections/Intro.astro";
-import Heading from "../components/elements/Heading.astro";
-import FeaturedProjects from "../components/sections/FeaturedProjects.astro";
-import LatestArticles from "../components/sections/LatestArticles.astro";
+import Section from "../components/elements/Section.astro";
+import ContinueBar from "../components/global/ContinueBar.astro";
+import CurrentSerial from "../components/sections/CurrentSerial.astro";
+import NovelCard from "../components/elements/NovelCard.astro";
+import InstallmentCard from "../components/elements/InstallmentCard.astro";
+
+// content
+import { getNovels, getTimeline, getInstallmentsOf, slugOf } from "../utils/novels";
+const novels = await getNovels();
+const timeline = await getTimeline();
+const bySlug = new Map(novels.map((novel) => [slugOf(novel), novel]));
+
+// La portada abre con la obra viva mas reciente; si no hay ninguna en curso,
+// con la ultima que se publico.
+const featured = novels.find((novel) => novel.data.status === "en-curso") ?? novels.at(0);
+const featuredSlug = featured ? slugOf(featured) : "";
+const featuredInstallments = featured ? await getInstallmentsOf(featuredSlug) : [];
+
+const catalog = await Promise.all(
+    novels.map(async (novel) => {
+        const slug = slugOf(novel);
+        const installments = await getInstallmentsOf(slug);
+        return { novel, slug, total: installments.length, lastDate: installments.at(-1)?.entry.data.publishedDate };
+    })
+);
+
+const latest = timeline.slice(0, 4);
 ---
 
 <Layout
-    title="Home"
-    description="El Renacentista — Cloud & DevSecOps Architect. Un espacio renacentista de notas técnicas, ideas y curiosidad por las múltiples áreas del conocimiento humano."
+    title="Inicio"
+    description="Novelas web por entregas. Se publica por capítulos, se lee desde el principio o desde donde te quedaste."
+    showTitle={false}
+    phosphor={featured?.data.phosphor ?? "ambar"}
 >
-    <Intro />
-    <FeaturedProjects />
-    <LatestArticles />
+    <ContinueBar />
+
+    {featured && (
+        <CurrentSerial novel={featured} slug={featuredSlug} installments={featuredInstallments} />
+    )}
+
+    <Section aria-label="Últimas entregas" title="lo más reciente" titleHeading="Últimas entregas">
+        <div class="flex flex-col gap-16">
+            {latest.map((item) => (
+                <InstallmentCard item={item} novel={bySlug.get(item.novelSlug)} slug={item.novelSlug} />
+            ))}
+        </div>
+    </Section>
+
+    <Section aria-label="Catálogo" title="catálogo" titleHeading="Todas las obras">
+        <div class="grid md:grid-cols-2 gap-16">
+            {catalog.map((item) => (
+                <NovelCard novel={item.novel} slug={item.slug} total={item.total} lastDate={item.lastDate} />
+            ))}
+        </div>
+    </Section>
 </Layout>

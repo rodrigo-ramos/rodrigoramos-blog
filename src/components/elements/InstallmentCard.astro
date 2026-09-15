@@ -1,0 +1,24 @@
+---
+// components
+import Text from "./Text.astro";
+import Heading from "./Heading.astro";
+
+// utils
+import { formatDate } from "../../utils/formatDate";
+import { pad } from "../../utils/novels";
+
+// props
+const { item, novel, slug } = Astro.props;
+---
+
+<a
+    href={`/novelas/${slug}/${item.entry.data.slug}`}
+    data-phosphor={novel.data.phosphor}
+    class="group border-2 border-base-950 hover:border-phosphor bg-base-900 hover:bg-base-950 p-16 flex md:flex-row flex-col md:items-center gap-8 justify-between"
+>
+    <div class="flex flex-col gap-4">
+        <Text variant={'sm'} class="text-phosphor">{`${novel.data.sigil} ${novel.data.title} · entrega ${pad(item.number)}`}</Text>
+        <Heading tagName="h3" tagSize="h4" class="group-hover:text-phosphor normal-case">{item.entry.data.title}</Heading>
+    </div>
+    <Text variant={'sm'} class="text-base-500 whitespace-nowrap">{formatDate(item.entry.data.publishedDate)}</Text>
+</a>

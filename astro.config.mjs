@@ -29,10 +29,17 @@ export default defineConfig({
     plugins: [tailwindcss()]
   },
   site: "https://renacentista.dev",
-  // /journal moved under /writing; keep the published URLs alive.
+  // El sitio dejo de ser un blog personal: las URLs viejas no se quedan
+  // colgando, apuntan a lo que hoy existe.
   redirects: {
-    '/blog': '/writing/journaling',
-    '/blog/[page]': '/writing/journaling/[page]',
+    '/blog': '/',
+    '/writing': '/',
+    '/microfiction': '/',
+    '/audiofilia': '/',
+    '/projects': '/',
+    '/about': '/acerca',
+    '/contact': '/acerca',
+    '/search': '/buscar',
   },
   integrations: [sitemap(), blogEditor(), pagefind()]
 });

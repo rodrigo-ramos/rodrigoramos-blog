@@ -103,4 +103,40 @@ const skillsAndTools = defineCollection({
 })
 
 
-export const collections = { projects, journaling, ensayo, trinos, microfiction, audiofilia, experience, education, skillsAndTools };
+// --- renacentista.dev: ficcion por entregas -------------------------------
+// Una obra por carpeta: src/content/novels/<novela>/obra.md + installments/*.md
+// El slug de la novela sale del id del glob, asi que una entrega no repite a
+// que obra pertenece: basta con moverla de carpeta.
+const novels = defineCollection({
+    loader: glob({base: "src/content/novels", pattern: "*/obra.md"}),
+    schema: z.object({
+        slug: z.string().max(50),
+        title: z.string().max(60),
+        tagline: z.string().max(90),
+        synopsis: z.string().max(400),
+        status: z.enum(["en-curso", "completa", "pausada"]),
+        // Cada obra toma un fosforo distinto: es lo que la hace reconocible
+        // de un vistazo sin salirse de la estetica de terminal.
+        phosphor: z.enum(["ambar", "verde", "cian", "magenta", "violeta", "rojo", "blanco"]).default("ambar"),
+        sigil: z.string().max(4).default("::"),
+        genre: z.array(z.string()).default([]),
+        startedDate: z.date(),
+        isDraft: z.boolean()
+    })
+});
+
+// `number` es opcional: por defecto la entrega se numera por orden de
+// publicacion dentro de su novela, que es como se lee una serie.
+const installments = defineCollection({
+    loader: glob({base: "src/content/novels", pattern: "*/installments/*.md"}),
+    schema: z.object({
+        slug: z.string().max(50),
+        title: z.string().max(80),
+        publishedDate: z.date(),
+        number: z.number().optional(),
+        isDraft: z.boolean()
+    })
+});
+
+
+export const collections = { novels, installments, projects, journaling, ensayo, trinos, microfiction, audiofilia, experience, education, skillsAndTools };

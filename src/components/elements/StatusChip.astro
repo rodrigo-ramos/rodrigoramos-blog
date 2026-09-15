@@ -1,0 +1,17 @@
+---
+// components
+import Text from "./Text.astro";
+
+// utils
+import { statusLabel } from "../../utils/novels";
+
+// props
+const { status } = Astro.props;
+
+const dot = status === "completa" ? "■" : status === "pausada" ? "‖" : "●";
+---
+
+<div class="flex flex-row gap-8 items-center">
+    <span class:list={["font-mono text-14", status === "en-curso" ? "text-phosphor glow-phosphor" : "text-base-600"]}>{dot}</span>
+    <Text variant={'sm'} class="text-base-400 uppercase">{statusLabel[status]}</Text>
+</div>

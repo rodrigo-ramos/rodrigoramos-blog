@@ -1,7 +1,9 @@
 export function formatDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
+  return date.toLocaleDateString("es-MX", {
     day: "numeric",
-    year: "numeric"
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC"
   });
 }
+

@@ -1,0 +1,47 @@
+---
+// layout
+import Layout from "../../layout/Layout.astro";
+
+// components
+import Section from "../../components/elements/Section.astro";
+import NovelCard from "../../components/elements/NovelCard.astro";
+
+// content
+import { getNovels, getInstallmentsOf, slugOf } from "../../utils/novels";
+const novels = await getNovels();
+const catalog = await Promise.all(
+    novels.map(async (novel) => {
+        const slug = slugOf(novel);
+        const installments = await getInstallmentsOf(slug);
+        return { novel, slug, total: installments.length, lastDate: installments.at(-1)?.entry.data.publishedDate };
+    })
+);
+
+const enCurso = catalog.filter(({ novel }) => novel.data.status === "en-curso");
+const cerradas = catalog.filter(({ novel }) => novel.data.status !== "en-curso");
+---
+
+<Layout
+    title="Novelas"
+    description="Catálogo de las novelas web publicadas por entregas en renacentista.dev."
+>
+    {enCurso.length > 0 && (
+        <Section aria-label="En curso" title="se publica ahora" titleHeading="En curso">
+            <div class="grid md:grid-cols-2 gap-16">
+                {enCurso.map((item) => (
+                    <NovelCard novel={item.novel} slug={item.slug} total={item.total} lastDate={item.lastDate} />
+                ))}
+            </div>
+        </Section>
+    )}
+
+    {cerradas.length > 0 && (
+        <Section aria-label="Obras cerradas" title="para leer de corrido" titleHeading="Terminadas y en pausa">
+            <div class="grid md:grid-cols-2 gap-16">
+                {cerradas.map((item) => (
+                    <NovelCard novel={item.novel} slug={item.slug} total={item.total} lastDate={item.lastDate} />
+                ))}
+            </div>
+        </Section>
+    )}
+</Layout>

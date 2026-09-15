@@ -10,7 +10,21 @@ import Header from "../components/global/Header.astro";
 import Footer from "../components/global/Footer.astro";
 import Heading from "../components/elements/Heading.astro";
 
-const {title, description, titleTemplate, siteName, ogImage, twitterSite, themeColor, locale, ...seoProps} = Astro.props;
+// `phosphor` tine todo el chrome con el color de la obra que se esta leyendo.
+// `showTitle` se apaga cuando la pagina arma su propio encabezado.
+const {
+	title,
+	description,
+	titleTemplate,
+	siteName,
+	ogImage,
+	twitterSite,
+	themeColor,
+	locale,
+	phosphor = "ambar",
+	showTitle = true,
+	...seoProps
+} = Astro.props;
 ---
 <html lang="es">
 	<BaseHead 
@@ -24,14 +38,17 @@ const {title, description, titleTemplate, siteName, ogImage, twitterSite, themeC
       	locale={locale}
       	{...seoProps}
 	/>
-	<body class="bg-base-950">
+	<body class="bg-base-950" data-phosphor={phosphor}>
 		<Wrapper class="min-h-full">
 			<Header />
 			<main class="md:px-32 px-16 flex flex-col gap-56">
-				<Heading tagName="h1" tagSize="h1" data-pagefind-meta="title">{title}</Heading>
+				{showTitle && <Heading tagName="h1" tagSize="h1" data-pagefind-meta="title">{title}</Heading>}
             	<slot />
         	</main>
         	<Footer />
 		</Wrapper>
+		<script>
+			import "../scripts/lectura";
+		</script>
 	</body>
 </html>

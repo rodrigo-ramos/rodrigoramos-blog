@@ -1,36 +1,33 @@
 ---
-// assets
-import { Image } from "astro:assets";
-import photo from "../../assets/images/cosmic_detective.jpg"; // change to your image
-
 // components
 import Text from "../elements/Text.astro";
 import NavBar from "./NavBar.astro";
-import SocialLinks from "../elements/SocialLinks.astro";
 
-// header content -> modify here!
+// content
+import { getNovels, getTimeline } from "../../utils/novels";
+const novels = await getNovels();
+const timeline = await getTimeline();
+
+const obras = novels.length === 1 ? "1 obra" : `${novels.length} obras`;
+const entregas = timeline.length === 1 ? "1 entrega" : `${timeline.length} entregas`;
+
 const {
-    role = "Cloud & DevSecOps Architect",
-    name = "Cosmic Detective",
-    status = "Online · es_MX"
+    tagline = "ficción por entregas",
+    author = "escribe El Renacentista"
 } = Astro.props;
-
 ---
 
 <header class="flex flex-col gap-24 md:pt-56 pt-16 bg-base-950 md:sticky md:top-0 z-50">
-    <div class="md:px-32 px-16 flex md:flex-row flex-col gap-16 items-center">
-        <Image src={photo} alt={name} width={200} height={200} densities={[1,1.5,2]} loading="eager" class="object-cover object-center w-25 h-25 sepia-50 drop-shadow-md" />
-        <div class="flex md:flex-row flex-col gap-24 justify-between items-center w-full">
-            <div class="flex flex-col gap-24 md:items-start justify-center items-center">
-                <div class="flex flex-col md:text-left text-center">
-                    <Text variant={'normal'} class="text-base-700">// {role}</Text>
-                    <Text variant={'xl'}>{name}</Text>
-                </div>
-                <SocialLinks />
-            </div>
-            <div class="bg-base-950 drop-shadow-md p-8">
-                <Text variant={'sm'} class="text-base-200">{status}</Text>
-            </div>
+    <div class="md:px-32 px-16 flex md:flex-row flex-col gap-16 justify-between md:items-end items-center">
+        <div class="flex flex-col md:text-left text-center">
+            <Text variant={'normal'} class="text-base-700">// {tagline}</Text>
+            <a href="/" class="hover:opacity-80">
+                <Text variant={'xl'} class="text-phosphor glow-phosphor">renacentista.dev</Text>
+            </a>
+            <Text variant={'sm'} class="text-base-600">{author}</Text>
+        </div>
+        <div class="bg-base-900 drop-shadow-md p-8">
+            <Text variant={'sm'} class="text-base-200">{obras} · {entregas}</Text>
         </div>
     </div>
     <NavBar />

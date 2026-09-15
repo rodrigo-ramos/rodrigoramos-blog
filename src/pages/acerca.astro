@@ -1,0 +1,21 @@
+---
+// layout
+import Layout from "../layout/Layout.astro";
+
+// components
+import Section from "../components/elements/Section.astro";
+import Text from "../components/elements/Text.astro";
+
+// content
+import { getNovels } from "../utils/novels";
+const novels = await getNovels();
+---
+
+<Layout
+    title="Acerca"
+    description="Quién escribe las novelas por entregas de renacentista.dev."
+>
+    <Section aria-label="Quién escribe" title="quién escribe" titleHeading="El Renacentista">
+        <Text variant={'normal'} class="text-base-400">Escribo bajo ese nombre. {novels.length === 1 ? "Hay una obra" : `Hay ${novels.length} obras`} en este sitio; el resto de mi trabajo no vive aquí.</Text>
+    </Section>
+</Layout>

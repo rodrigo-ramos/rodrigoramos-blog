@@ -1,0 +1,44 @@
+---
+// components
+import Text from "./Text.astro";
+import Heading from "./Heading.astro";
+import StatusChip from "./StatusChip.astro";
+
+// utils
+import { formatDate } from "../../utils/formatDate";
+import { pad } from "../../utils/novels";
+
+// props
+const { novel, slug, total, lastDate } = Astro.props;
+const { title, tagline, synopsis, status, phosphor, sigil, genre } = novel.data;
+---
+
+<article data-phosphor={phosphor} class="group border-2 border-base-900 hover:border-phosphor bg-base-900 flex flex-col">
+    <a href={`/novelas/${slug}`} class="flex flex-col gap-16 p-16">
+        <div class="flex flex-row gap-16 justify-between items-start">
+            <div class="flex flex-col gap-4">
+                <Text variant={'sm'} class="text-phosphor-dim">{sigil} obra</Text>
+                <Heading tagName="h3" tagSize="h3" class="group-hover:text-phosphor normal-case">{title}</Heading>
+                <Text variant={'sm'} class="text-base-500">{tagline}</Text>
+            </div>
+            <StatusChip status={status} />
+        </div>
+
+        <Text variant={'sm'} class="text-base-400">{synopsis}</Text>
+
+        <div class="flex flex-row flex-wrap gap-16 border-t-2 border-base-950 pt-16">
+            <Text variant={'sm'} class="text-base-500">{pad(total)} entregas</Text>
+            {lastDate && <Text variant={'sm'} class="text-base-500">última: {formatDate(lastDate)}</Text>}
+            {genre.map((tag: string) => (
+                <Text variant={'sm'} class="text-base-700">#{tag}</Text>
+            ))}
+            <Text variant={'sm'} class="text-phosphor" data-novel-progress={slug} data-total={total} hidden></Text>
+        </div>
+    </a>
+    <a
+        href={`/novelas/${slug}`}
+        data-novel-resume={slug}
+        hidden
+        class="border-t-2 border-base-950 px-16 py-8 text-phosphor hover:bg-base-950 font-pixels text-20"
+    >retomar donde te quedaste ▸</a>
+</article>

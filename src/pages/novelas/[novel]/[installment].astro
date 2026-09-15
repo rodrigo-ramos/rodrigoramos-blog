@@ -1,0 +1,105 @@
+---
+// layout
+import Layout from "../../../layout/Layout.astro";
+
+// components
+import Text from "../../../components/elements/Text.astro";
+import Heading from "../../../components/elements/Heading.astro";
+
+// utils
+import { formatDate } from "../../../utils/formatDate";
+import { getReadingTime } from "../../../utils/readingTime";
+import { getNovels, getInstallmentsOf, slugOf, pad } from "../../../utils/novels";
+
+// routing
+import { type GetStaticPaths } from "astro";
+import { render } from "astro:content";
+export const getStaticPaths = (async () => {
+    const novels = await getNovels();
+    const paths = [];
+    for (const novel of novels) {
+        const slug = slugOf(novel);
+        const installments = await getInstallmentsOf(slug);
+        installments.forEach((item, index) => {
+            paths.push({
+                params: { novel: slug, installment: item.entry.data.slug },
+                props: {
+                    novel,
+                    slug,
+                    item,
+                    total: installments.length,
+                    prev: installments[index - 1] ?? null,
+                    next: installments[index + 1] ?? null
+                }
+            });
+        });
+    }
+    return paths;
+}) satisfies GetStaticPaths;
+
+// props
+const { novel, slug, item, total, prev, next } = Astro.props;
+const { Content } = await render(item.entry);
+const readingTime = getReadingTime(item.entry.body ?? "");
+---
+
+<Layout
+    title={item.entry.data.title}
+    description={`${novel.data.title} · entrega ${pad(item.number)}`}
+    showTitle={false}
+    phosphor={novel.data.phosphor}
+>
+    <article
+        class="flex flex-col gap-24"
+        data-current-installment
+        data-novel={slug}
+        data-slug={item.entry.data.slug}
+        data-number={item.number}
+        data-title={item.entry.data.title}
+        data-novel-title={novel.data.title}
+    >
+        <div class="flex flex-col gap-8 border-b-2 border-base-900 pb-16">
+            <a href={`/novelas/${slug}`} class="font-mono text-14 text-phosphor hover:underline">
+                {`${novel.data.sigil} ${novel.data.title}`}
+            </a>
+            <Text variant={'lg'} class="text-base-500">entrega {pad(item.number)} de {pad(total)}</Text>
+            <Heading tagName="h1" tagSize="h1" data-pagefind-meta="title">{item.entry.data.title}</Heading>
+            <div class="flex flex-row flex-wrap gap-16">
+                <Text variant={'sm'} class="text-base-600">{formatDate(item.entry.data.publishedDate)}</Text>
+                <Text variant={'sm'} class="text-base-600">{readingTime} min de lectura</Text>
+            </div>
+        </div>
+
+        <div class="markdown-content flex flex-col gap-24 max-w-[68ch]" data-pagefind-body>
+            <Content />
+        </div>
+
+        <div data-installment-end class="border-t-2 border-base-900 pt-16 flex flex-col gap-16">
+            {next ? (
+                <a href={`/novelas/${slug}/${next.entry.data.slug}`} class="group border-2 border-phosphor hover:bg-phosphor-soft p-16 flex flex-col gap-4">
+                    <Text variant={'sm'} class="text-phosphor-dim">// siguiente entrega</Text>
+                    <Heading tagName="h2" tagSize="h3" class="text-phosphor normal-case">{`${pad(next.number)} · ${next.entry.data.title}`}</Heading>
+                </a>
+            ) : (
+                <div class="border-2 border-base-900 p-16 flex flex-col gap-4">
+                    <Text variant={'sm'} class="text-base-600">// fin de lo publicado</Text>
+                    <Text variant={'normal'} class="text-base-300">
+                        {novel.data.status === "completa"
+                            ? "Aquí termina la obra."
+                            : "La siguiente entrega aún no existe. Vuelve, o suscríbete al RSS."}
+                    </Text>
+                    <a href={`/novelas/${slug}/rss.xml`} class="font-mono text-14 text-phosphor hover:underline">rss de esta obra</a>
+                </div>
+            )}
+
+            <nav class="flex md:flex-row flex-col gap-16 justify-between">
+                {prev ? (
+                    <a href={`/novelas/${slug}/${prev.entry.data.slug}`} class="font-pixels text-20 text-base-300 hover:text-phosphor">
+                        ◂ {pad(prev.number)} · {prev.entry.data.title}
+                    </a>
+                ) : <span />}
+                <a href={`/novelas/${slug}`} class="font-pixels text-20 text-base-300 hover:text-phosphor">índice de la obra</a>
+            </nav>
+        </div>
+    </article>
+</Layout>

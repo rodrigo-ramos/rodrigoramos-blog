@@ -1,0 +1,51 @@
+---
+// components
+import Text from "../elements/Text.astro";
+import Heading from "../elements/Heading.astro";
+import StatusChip from "../elements/StatusChip.astro";
+
+// utils
+import { formatDate } from "../../utils/formatDate";
+import { pad } from "../../utils/novels";
+
+// props
+const { novel, slug, installments } = Astro.props;
+const first = installments.at(0);
+const last = installments.at(-1);
+---
+
+<section data-phosphor={novel.data.phosphor} aria-label={novel.data.title} class="flex flex-col gap-24 border-2 border-base-900 p-16">
+    <div class="flex flex-row flex-wrap gap-16 justify-between items-center">
+        <Text variant={'normal'} class="text-phosphor-dim">{novel.data.sigil} obra en curso</Text>
+        <StatusChip status={novel.data.status} />
+    </div>
+
+    <div class="flex flex-col gap-8">
+        <Heading tagName="h1" tagSize="h1" class="text-phosphor glow-phosphor">{novel.data.title}</Heading>
+        <Text variant={'lg'} class="text-base-300">{novel.data.tagline}</Text>
+    </div>
+
+    <Text variant={'normal'} class="text-base-400">{novel.data.synopsis}</Text>
+
+    <div class="flex flex-row flex-wrap gap-16 border-t-2 border-base-900 pt-16">
+        <Text variant={'sm'} class="text-base-500">{pad(installments.length)} entregas</Text>
+        <Text variant={'sm'} class="text-base-500">desde {formatDate(novel.data.startedDate)}</Text>
+        {last && <Text variant={'sm'} class="text-base-500">última: {formatDate(last.entry.data.publishedDate)}</Text>}
+    </div>
+
+    <div class="flex md:flex-row flex-col gap-16">
+        {first && (
+            <a href={`/novelas/${slug}/${first.entry.data.slug}`} class="border-2 border-phosphor text-phosphor hover:bg-phosphor-soft px-24 py-16 font-pixels text-20 text-center">
+                empezar por el principio
+            </a>
+        )}
+        {last && (
+            <a href={`/novelas/${slug}/${last.entry.data.slug}`} class="border-2 border-base-800 text-base-200 hover:border-phosphor px-24 py-16 font-pixels text-20 text-center">
+                última entrega · {pad(last.number)} ▸
+            </a>
+        )}
+        <a href={`/novelas/${slug}`} class="border-2 border-base-800 text-base-200 hover:border-phosphor px-24 py-16 font-pixels text-20 text-center">
+            índice completo
+        </a>
+    </div>
+</section>

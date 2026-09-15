@@ -13,12 +13,12 @@ const { prev, next } = Astro.props;
 <div class="flex flex-row justify-between gap-32 items-center">
     {
         prev && (
-            <Link variant={'inline'} href={prev} text="Previous Page"/>
+            <Link variant={'inline'} href={prev} text="◂ página anterior"/>
         )
     }
     {
         next && (
-            <Link variant={'inline'} href={next} text="Next Page"/>
+            <Link variant={'inline'} href={next} text="página siguiente ▸"/>
         )
     }   
 </div>
